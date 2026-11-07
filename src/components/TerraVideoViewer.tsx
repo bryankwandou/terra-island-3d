@@ -31,16 +31,17 @@ export const TerraVideoViewer: React.FC<TerraVideoViewerProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(20);
 
-  // Sync video play/pause
+  // Sync video play/pause and mute
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    video.muted = isMuted;
     if (isPlaying) {
       video.play().catch(() => {});
     } else {
       video.pause();
     }
-  }, [isPlaying]);
+  }, [isPlaying, isMuted]);
 
   // Sync active chapter seeking
   useEffect(() => {
@@ -123,7 +124,7 @@ export const TerraVideoViewer: React.FC<TerraVideoViewerProps> = ({
           playsInline
           autoPlay
           loop
-          muted={isMuted}
+          muted
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
           className="w-full h-full object-cover pointer-events-none"

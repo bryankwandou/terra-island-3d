@@ -25,7 +25,7 @@ export const App: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [isSplit, setIsSplit] = useState(true);
   const [sliderPosition, setSliderPosition] = useState(50);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const [isControlsOpen, setIsControlsOpen] = useState(false);
   const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
 
