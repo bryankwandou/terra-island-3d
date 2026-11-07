@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GPT-6.1 Terra — 10th Iteration Photorealistic World Engine</title>
+    <meta
+      name="description"
+      content="Real-time 3D photorealistic tropical sanctuary and world simulation engine featuring subsurface coral reef caustics, cliffside architectural villas, volumetric rainforest waterfall mist, and live iteration split comparison."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="app">
+      <canvas
+        id="terra-canvas"
+        aria-label="Interactive 3D photorealistic tropical sanctuary simulation"
+      ></canvas>
+
+      <!-- Floating Video-Faithful Iteration Badges -->
+      <div id="badge-top" class="iteration-pill iteration-pill--top" aria-live="polite">
+        <span class="pill-dot pill-dot--ultra"></span>
+        <span id="badge-top-text">GPT-6.1 Terra | 10th Iteration (Ultra Realism)</span>
+      </div>
+
+      <div id="split-divider" class="split-divider" hidden>
+        <div class="split-line"></div>
+        <div id="badge-bottom" class="iteration-pill iteration-pill--bottom">
+          <span class="pill-dot pill-dot--baseline"></span>
+          <span>GPT-6.1 Terra | 1st Attempt</span>
+        </div>
+      </div>
+
+      <!-- Top HUD Bar -->
+      <header class="hud-top">
+        <div class="brand-lockup" role="banner">
+          <div class="brand-row">
+            <span class="brand-title">TERRA</span>
+            <span class="brand-tag">10TH ITERATION</span>
+          </div>
+          <span class="brand-subtitle">PHOTOREALISTIC WORLD &amp; SHADER ENGINE</span>
+        </div>
+
+        <div class="top-actions">
+          <!-- Mode Toggle: Full-Screen Ultra vs Video Split Compare -->
+          <div class="mode-switch" role="group" aria-label="Render comparison mode">
+            <button
+              id="btn-mode-ultra"
+              class="mode-btn is-active"
+              type="button"
+              aria-pressed="true"
+            >
+              Ultra Fullscreen
+            </button>
+            <button
+              id="btn-mode-split"
+              class="mode-btn"
+              type="button"
+              aria-pressed="false"
+            >
+              Split Compare (vs 1st Attempt)
+            </button>
+          </div>
+
+          <!-- Cinematic Director Reel Toggle -->
+          <button
+            id="btn-director"
+            class="pill-action is-active"
+            type="button"
+            aria-pressed="true"
+            title="Toggle continuous cinematic camera motion"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span id="director-label">Director Reel</span>
+          </button>
+
+          <!-- Audio Toggle -->
+          <button
+            id="btn-sound"
+            class="circle-btn"
+            type="button"
+            aria-label="Toggle spatial tropical audio"
+            aria-pressed="false"
+            title="Toggle Spatial Ocean &amp; Rainforest Audio"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+            </svg>
+          </button>
+
+          <!-- Atmosphere & Realism Controls Button -->
+          <button
+            id="btn-menu"
+            class="circle-btn"
+            type="button"
+            aria-label="Open shader and atmosphere controls"
+            aria-expanded="false"
+            title="Atmosphere &amp; Shader Controls"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <line x1="4" y1="21" x2="4" y2="14"></line>
+              <line x1="4" y1="10" x2="4" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12" y2="3"></line>
+              <line x1="20" y1="21" x2="20" y2="16"></line>
+              <line x1="20" y1="12" x2="20" y2="3"></line>
+              <line x1="1" y1="14" x2="7" y2="14"></line>
+              <line x1="9" y1="8" x2="15" y2="8"></line>
+              <line x1="17" y1="16" x2="23" y2="16"></line>
+            </svg>
+          </button>
+
+          <!-- Atmosphere & Shader Popover -->
+          <aside
+            id="atmosphere-panel"
+            class="atmosphere-panel"
+            aria-label="Shader and atmosphere parameters"
+            hidden
+          >
+            <div class="panel-header">
+              <span class="panel-kicker">SHADER &amp; ATMOSPHERE ENGINE</span>
+              <span id="fps-readout" class="fps-badge">60 FPS · ACES</span>
+            </div>
+
+            <div class="control-group">
+              <div class="control-row">
+                <label for="slider-sun">Solar Elevation &amp; Warmth</label>
+                <span id="val-sun" class="control-value">Golden Sunset</span>
+              </div>
+              <input id="slider-sun" type="range" min="10" max="100" value="78" />
+            </div>
+
+            <div class="control-group">
+              <div class="control-row">
+                <label for="slider-waves">Shoreline Swash &amp; Swell</label>
+                <span id="val-waves" class="control-value">Natural Surf</span>
+              </div>
+              <input id="slider-waves" type="range" min="10" max="100" value="64" />
+            </div>
+
+            <div class="control-group">
+              <div class="control-row">
+                <label for="slider-mist">Volumetric Mist &amp; God Rays</label>
+                <span id="val-mist" class="control-value">88%</span>
+              </div>
+              <input id="slider-mist" type="range" min="15" max="100" value="88" />
+            </div>
+
+            <div class="control-group">
+              <div class="control-row">
+                <label for="slider-clarity">Coral Reef Water Clarity</label>
+                <span id="val-clarity" class="control-value">94%</span>
+              </div>
+              <input id="slider-clarity" type="range" min="25" max="100" value="94" />
+            </div>
+
+            <div class="panel-footer">
+              <span class="hint-text">Drag to orbit 3D · Scroll to zoom · Keys 1–4 or S for Split</span>
+            </div>
+          </aside>
+        </div>
+      </header>
+
+      <!-- Bottom-Left Editorial Scene Description -->
+      <section class="hud-editorial" aria-live="polite">
+        <p id="chapter-kicker" class="editorial-kicker">01 / SUNSET ATOLL · 00:00–00:05</p>
+        <h1 id="chapter-title" class="editorial-title">
+          <span>Golden light over</span>
+          <span>the coral lagoon.</span>
+        </h1>
+        <p id="chapter-subtitle" class="editorial-subtitle">
+          Subsurface reef caustics, anisotropic solar glint, and 44 backlit pinnate coconut palms.
+        </p>
+      </section>
+
+      <!-- Bottom-Center 4-Scene Camera Dock -->
+      <nav class="hud-dock" aria-label="World camera scenes">
+        <button class="dock-item is-active" type="button" data-chapter="0">
+          <span class="dock-top">
+            <span class="dock-index">01</span>
+            <span class="dock-label">Sunset Atoll</span>
+          </span>
+          <span class="dock-progress"><span class="dock-progress-fill" id="prog-0"></span></span>
+        </button>
+        <button class="dock-item" type="button" data-chapter="1">
+          <span class="dock-top">
+            <span class="dock-index">02</span>
+            <span class="dock-label">Cliffside Villas</span>
+          </span>
+          <span class="dock-progress"><span class="dock-progress-fill" id="prog-1"></span></span>
+        </button>
+        <button class="dock-item" type="button" data-chapter="2">
+          <span class="dock-top">
+            <span class="dock-index">03</span>
+            <span class="dock-label">Jungle Waterfall</span>
+          </span>
+          <span class="dock-progress"><span class="dock-progress-fill" id="prog-2"></span></span>
+        </button>
+        <button class="dock-item" type="button" data-chapter="3">
+          <span class="dock-top">
+            <span class="dock-index">04</span>
+            <span class="dock-label">Crescent Bay</span>
+          </span>
+          <span class="dock-progress"><span class="dock-progress-fill" id="prog-3"></span></span>
+        </button>
+      </nav>
+
+      <!-- Bottom-Right Clean View / Reset Orbit Button -->
+      <div class="hud-bottom-right">
+        <button
+          id="btn-clean-ui"
+          class="circle-btn"
+          type="button"
+          aria-label="Toggle clean cinema view without HUD"
+          aria-pressed="false"
+          title="Toggle Clean Cinema View (Key H)"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
+
