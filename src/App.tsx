@@ -24,7 +24,19 @@ export const App: React.FC = () => {
   const [isMuted, setIsMuted] = useState(true);
   const [isControlsOpen, setIsControlsOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"photorealistic" | "reel" | "split" | "3d">("photorealistic");
+  const [viewMode, setViewMode] = useState<"photorealistic" | "reel" | "split" | "3d">(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const m = params.get("mode");
+      if (m === "3d" || m === "split" || m === "reel" || m === "photorealistic") return m;
+      if (window.location.hash === "#3d") return "3d";
+      if (window.location.hash === "#split") return "split";
+      if (window.location.hash === "#reel") return "reel";
+    } catch (_) {
+      // ignore SSR or fallback
+    }
+    return "photorealistic";
+  });
   const [sliderPosition, setSliderPosition] = useState(50);
 
   // Atmosphere & Light Parameters for Real-time Simulation
@@ -38,6 +50,15 @@ export const App: React.FC = () => {
   useEffect(() => {
     soundscapeRef.current = new TerraSoundscape();
   }, []);
+
+  const changeViewMode = (mode: "photorealistic" | "reel" | "split" | "3d") => {
+    setViewMode(mode);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("mode", mode);
+      window.history.replaceState({}, "", url.toString());
+    } catch (_) {}
+  };
 
   const handleToggleAudio = () => {
     if (!soundscapeRef.current) return;
@@ -132,7 +153,7 @@ export const App: React.FC = () => {
         <div className="pointer-events-auto flex items-center p-1 rounded-full bg-[rgba(244,240,230,0.94)] border border-[rgba(30,38,41,0.14)] shadow-2xl backdrop-blur-xl">
           <button
             type="button"
-            onClick={() => setViewMode("photorealistic")}
+            onClick={() => changeViewMode("photorealistic")}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${viewMode === "photorealistic"
                 ? "bg-white text-[#1E2629] shadow-sm font-bold"
                 : "text-[#727670] hover:text-[#1E2629]"
@@ -144,7 +165,7 @@ export const App: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setViewMode("reel")}
+            onClick={() => changeViewMode("reel")}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${viewMode === "reel"
                 ? "bg-white text-[#1E2629] shadow-sm font-bold"
                 : "text-[#727670] hover:text-[#1E2629]"
@@ -156,7 +177,7 @@ export const App: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setViewMode("split")}
+            onClick={() => changeViewMode("split")}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${viewMode === "split"
                 ? "bg-white text-[#1E2629] shadow-sm font-bold"
                 : "text-[#727670] hover:text-[#1E2629]"
@@ -168,7 +189,7 @@ export const App: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setViewMode("3d")}
+            onClick={() => changeViewMode("3d")}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${viewMode === "3d"
                 ? "bg-white text-[#1E2629] shadow-sm font-bold"
                 : "text-[#727670] hover:text-[#1E2629]"
