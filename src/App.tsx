@@ -3,31 +3,20 @@ import {
   Volume2,
   VolumeX,
   Sliders,
-  BarChart3,
   ArrowUpRight,
-  Sparkles,
-  Film,
-  Layers,
 } from "lucide-react";
 import { CHAPTERS } from "./scene/chapters";
-import { TerraVideoViewer } from "./components/TerraVideoViewer";
 import { TerraCanvas3D } from "./components/TerraCanvas3D";
-import { TelemetryModal } from "./components/TelemetryModal";
 import { TerraSoundscape } from "./scene/audio";
 
 export const App: React.FC = () => {
-  // Default to 3D Orbit Simulation as the primary hero experience, matching mentor standard
-  const [viewMode, setViewMode] = useState<"3d" | "video">("3d");
   const [activeChapter, setActiveChapter] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isOverview, setIsOverview] = useState(false);
-  const [isSplit, setIsSplit] = useState(false);
-  const [sliderPosition, setSliderPosition] = useState(50);
   const [isMuted, setIsMuted] = useState(true);
   const [isControlsOpen, setIsControlsOpen] = useState(false);
-  const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
 
-  // Shader & Atmosphere Parameters
+  // Atmosphere & Light Parameters
   const [sunElevation, setSunElevation] = useState(0.78);
   const [waveStrength, setWaveStrength] = useState(0.64);
   const [mistDensity, setMistDensity] = useState(0.88);
@@ -66,12 +55,6 @@ export const App: React.FC = () => {
         handleToggleAudio();
       } else if (e.key.toLowerCase() === "o") {
         setIsOverview((prev) => !prev);
-      } else if (e.key.toLowerCase() === "s") {
-        setIsSplit((prev) => !prev);
-      } else if (e.key.toLowerCase() === "v") {
-        setViewMode((prev) => (prev === "3d" ? "video" : "3d"));
-      } else if (e.key.toLowerCase() === "t") {
-        setIsTelemetryOpen((prev) => !prev);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -82,34 +65,21 @@ export const App: React.FC = () => {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-[#070C10] text-[#F7F4ED]">
-      {/* Background Main Engine View: 3D Simulation vs Video Mode */}
-      {viewMode === "3d" ? (
-        <TerraCanvas3D
-          activeChapter={activeChapter}
-          isDirector={isPlaying}
-          isSplit={isSplit}
-          isOverview={isOverview}
-          sunElevation={sunElevation}
-          waveStrength={waveStrength}
-          mistDensity={mistDensity}
-          waterClarity={waterClarity}
-        />
-      ) : (
-        <TerraVideoViewer
-          activeChapter={activeChapter}
-          isPlaying={isPlaying}
-          onChapterChange={setActiveChapter}
-          onPlayPauseToggle={() => setIsPlaying((p) => !p)}
-          isMuted={isMuted}
-          onToggleMute={handleToggleAudio}
-          sliderPosition={sliderPosition}
-          onSliderChange={setSliderPosition}
-        />
-      )}
+      {/* Background Main Engine View: Pure Photorealistic Fullscreen 3D World */}
+      <TerraCanvas3D
+        activeChapter={activeChapter}
+        isDirector={isPlaying}
+        isSplit={false}
+        isOverview={isOverview}
+        sunElevation={sunElevation}
+        waveStrength={waveStrength}
+        mistDensity={mistDensity}
+        waterClarity={waterClarity}
+      />
 
       {/* Top Floating Glass HUD Bar */}
       <header className="fixed top-0 left-0 right-0 z-40 flex items-start justify-between p-6 pointer-events-none">
-        {/* Brand Lockup (Strictly Matching Mentor Typography) */}
+        {/* Brand Lockup */}
         <div className="pointer-events-auto flex flex-col gap-1 text-shadow-md">
           <span className="font-sans text-lg font-semibold tracking-[0.24em] text-white leading-tight">
             TERRA
@@ -119,47 +89,8 @@ export const App: React.FC = () => {
           </span>
         </div>
 
-        {/* Center Mode Switcher */}
-        <div className="pointer-events-auto hidden md:flex items-center p-1 rounded-full bg-[rgba(244,240,230,0.94)] border border-[rgba(30,38,41,0.12)] shadow-xl backdrop-blur-md">
-          <button
-            type="button"
-            onClick={() => setViewMode("3d")}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              viewMode === "3d"
-                ? "bg-white text-[#1E2629] shadow-sm font-bold"
-                : "text-[#727670] hover:text-[#1E2629]"
-            }`}
-          >
-            <Sparkles size={13} className={viewMode === "3d" ? "text-[#D4893B]" : ""} />
-            <span>3D Simulation</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("video")}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              viewMode === "video"
-                ? "bg-white text-[#1E2629] shadow-sm font-bold"
-                : "text-[#727670] hover:text-[#1E2629]"
-            }`}
-          >
-            <Film size={13} className={viewMode === "video" ? "text-[#D4893B]" : ""} />
-            <span>Video Reel (Ground Truth)</span>
-          </button>
-        </div>
-
         {/* Top Right Action Tools */}
         <div className="pointer-events-auto flex items-center gap-2.5">
-          {/* Telemetry Button */}
-          <button
-            type="button"
-            onClick={() => setIsTelemetryOpen(true)}
-            className="circle-btn"
-            title="Open Technical Benchmark Matrix (Key T)"
-            aria-label="Technical Benchmark"
-          >
-            <BarChart3 size={18} className="text-[#1E2629]" />
-          </button>
-
           {/* Sound Toggle Button */}
           <button
             type="button"
@@ -171,7 +102,7 @@ export const App: React.FC = () => {
             {!isMuted ? <Volume2 size={18} /> : <VolumeX size={18} />}
           </button>
 
-          {/* Atmosphere & Scene Controls Button (Mentor ...) */}
+          {/* Atmosphere & Scene Controls Button */}
           <button
             type="button"
             onClick={() => setIsControlsOpen((p) => !p)}
@@ -197,7 +128,7 @@ export const App: React.FC = () => {
           <div className="space-y-3.5 text-xs">
             <div>
               <div className="flex justify-between mb-1">
-                <span className="font-medium text-[#1E2629]">Mediterranean Sun Elevation</span>
+                <span className="font-medium text-[#1E2629]">Sun Elevation</span>
                 <span className="text-[#727670] font-semibold">
                   {Math.round(sunElevation * 100)}%
                 </span>
@@ -260,28 +191,13 @@ export const App: React.FC = () => {
             </div>
           </div>
 
-          <div className="pt-3 border-t border-black/10 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setIsSplit((p) => !p)}
-              className={`w-full py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 border transition-all ${
-                isSplit
-                  ? "bg-[#1E2629] text-white border-[#1E2629]"
-                  : "bg-white text-[#1E2629] border-black/15 hover:bg-black/5"
-              }`}
-            >
-              <Layers size={13} />
-              <span>{isSplit ? "Exit Split Compare" : "Compare 9th vs 1st Engine"}</span>
-            </button>
-          </div>
-
-          <div className="pt-2 text-[11px] text-[#727670] text-center">
+          <div className="pt-2 text-[11px] text-[#727670] text-center border-t border-black/10">
             Drag to orbit · Scroll to zoom · Keys 1–4
           </div>
         </aside>
       )}
 
-      {/* Bottom Left Editorial Copy (Exact Mentor Typography) */}
+      {/* Bottom Left Editorial Copy */}
       <section className="hud-editorial">
         <p className="editorial-kicker">{currentChapterSpec.kicker}</p>
         <h1 className="editorial-title">
@@ -291,8 +207,8 @@ export const App: React.FC = () => {
         <p className="editorial-subtitle">{currentChapterSpec.subtitle}</p>
       </section>
 
-      {/* Bottom Center Chapter Dock (Exact Mentor Cream Pill Dock) */}
-      <nav className="hud-dock" aria-label="Village camera chapters">
+      {/* Bottom Center Chapter Dock */}
+      <nav className="hud-dock" aria-label="Atoll camera chapters">
         {CHAPTERS.map((chapter, idx) => {
           const isActive = activeChapter === idx && !isOverview;
           return (
@@ -309,7 +225,7 @@ export const App: React.FC = () => {
         })}
       </nav>
 
-      {/* Bottom Right Overview Flyover Button (Exact Mentor ArrowUpRight) */}
+      {/* Bottom Right Overview Flyover Button */}
       <div className="fixed right-6 bottom-6 z-40">
         <button
           type="button"
@@ -321,9 +237,6 @@ export const App: React.FC = () => {
           <ArrowUpRight size={20} />
         </button>
       </div>
-
-      {/* Telemetry Benchmark Modal */}
-      <TelemetryModal isOpen={isTelemetryOpen} onClose={() => setIsTelemetryOpen(false)} />
     </div>
   );
 };
