@@ -1,5 +1,5 @@
 {
-  "name": "terra-island-3d",
+  "name": "base-3d-template",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -9,12 +9,20 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "three": "^0.174.0"
+    "gsap": "^3.12.5",
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "three": "^0.170.0"
   },
   "devDependencies": {
-    "@types/three": "^0.174.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.170.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.0",
     "typescript": "^5.7.2",
-    "vite": "^6.2.0"
+    "vite": "^6.0.5"
   }
 }
-
