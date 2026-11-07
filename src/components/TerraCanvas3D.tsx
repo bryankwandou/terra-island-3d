@@ -146,3 +146,4 @@ export const TerraCanvas3D: React.FC<TerraCanvas3DProps> = ({
 
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block cursor-grab active:cursor-grabbing" />;
 };
+

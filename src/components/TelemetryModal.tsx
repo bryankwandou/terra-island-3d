@@ -152,3 +152,4 @@ export const TelemetryModal: React.FC<TelemetryModalProps> = ({ isOpen, onClose 
     </div>
   );
 };
+
