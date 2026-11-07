@@ -2,10 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Volume2,
   VolumeX,
+  Play,
+  Pause,
   Sliders,
-  ArrowUpRight,
   Sparkles,
-  Layers,
+  Columns,
+  Box,
+  ArrowUpRight,
+  X,
 } from "lucide-react";
 import { CHAPTERS } from "./scene/chapters";
 import { TerraCanvas3D } from "./components/TerraCanvas3D";
@@ -18,7 +22,8 @@ export const App: React.FC = () => {
   const [isOverview, setIsOverview] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [isControlsOpen, setIsControlsOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"video" | "simulation">("video");
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"photorealistic" | "split" | "3d">("photorealistic");
   const [sliderPosition, setSliderPosition] = useState(50);
 
   // Atmosphere & Light Parameters for Real-time Simulation
@@ -61,7 +66,9 @@ export const App: React.FC = () => {
       } else if (e.key.toLowerCase() === "o") {
         setIsOverview((prev) => !prev);
       } else if (e.key.toLowerCase() === "v") {
-        setViewMode((prev) => (prev === "video" ? "simulation" : "video"));
+        setViewMode((prev) =>
+          prev === "photorealistic" ? "split" : prev === "split" ? "3d" : "photorealistic",
+        );
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -72,20 +79,10 @@ export const App: React.FC = () => {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-[#070C10] text-[#F7F4ED]">
-      {/* View Layer 1: Cinematic Video Comparison Mode (9th Iteration vs 1st Attempt) */}
-      {viewMode === "video" ? (
-        <TerraVideoViewer
-          activeChapter={activeChapter}
-          isPlaying={isPlaying}
-          onChapterChange={setActiveChapter}
-          onPlayPauseToggle={() => setIsPlaying((p) => !p)}
-          isMuted={isMuted}
-          onToggleMute={handleToggleAudio}
-          sliderPosition={sliderPosition}
-          onSliderChange={setSliderPosition}
-        />
-      ) : (
-        /* View Layer 2: Real-time WebGL Raymarch Simulation */
+      {/* ============================================================= */}
+      {/* VIEWPORT LAYER (100% FULLSCREEN IMMERSIVE, NO BLACK BARS)     */}
+      {/* ============================================================= */}
+      {viewMode === "3d" ? (
         <TerraCanvas3D
           activeChapter={activeChapter}
           isDirector={isPlaying}
@@ -96,50 +93,89 @@ export const App: React.FC = () => {
           mistDensity={mistDensity}
           waterClarity={waterClarity}
         />
+      ) : (
+        <TerraVideoViewer
+          activeChapter={activeChapter}
+          isPlaying={isPlaying}
+          onChapterChange={setActiveChapter}
+          onPlayPauseToggle={() => setIsPlaying((p) => !p)}
+          isMuted={isMuted}
+          onToggleMute={handleToggleAudio}
+          displayMode={viewMode}
+          sliderPosition={sliderPosition}
+          onSliderChange={setSliderPosition}
+        />
       )}
 
-      {/* Top Floating Glass HUD Bar */}
+      {/* ============================================================= */}
+      {/* TOP FLOATING GLASS HUD BAR (UNIFIED, NON-COLLIDING)           */}
+      {/* ============================================================= */}
       <header className="fixed top-0 left-0 right-0 z-40 flex items-start justify-between p-6 pointer-events-none">
         {/* Brand Lockup */}
         <div className="pointer-events-auto flex flex-col gap-1 text-shadow-md">
-          <span className="font-sans text-lg font-semibold tracking-[0.24em] text-white leading-tight">
+          <span className="font-sans text-xl font-semibold tracking-[0.24em] text-white leading-tight">
             TERRA
           </span>
-          <span className="font-sans text-xs font-medium tracking-[0.2em] text-white/80 origin-left scale-[0.80] uppercase">
+          <span className="font-sans text-xs font-medium tracking-[0.2em] text-white/80 origin-left scale-[0.82] uppercase">
             A PACIFIC ATOLL IN ULTRA-FIDELITY
           </span>
         </div>
 
-        {/* Top Center Mode Switcher */}
-        <div className="pointer-events-auto flex items-center p-1 rounded-full bg-[rgba(244,240,230,0.92)] border border-[rgba(30,38,41,0.12)] shadow-xl backdrop-blur-md">
+        {/* Top Center Mode Segmented Pill */}
+        <div className="pointer-events-auto flex items-center p-1 rounded-full bg-[rgba(244,240,230,0.94)] border border-[rgba(30,38,41,0.14)] shadow-2xl backdrop-blur-xl">
           <button
             type="button"
-            onClick={() => setViewMode("video")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              viewMode === "video"
+            onClick={() => setViewMode("photorealistic")}
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              viewMode === "photorealistic"
                 ? "bg-white text-[#1E2629] shadow-sm font-bold"
                 : "text-[#727670] hover:text-[#1E2629]"
             }`}
           >
-            <Sparkles size={13} className={viewMode === "video" ? "text-[#E59846]" : ""} />
-            <span>Cinematic Comparison (9th Iteration)</span>
+            <Sparkles size={13} className={viewMode === "photorealistic" ? "text-[#E59846]" : ""} />
+            <span>9th Iteration (Photorealistic)</span>
           </button>
+
           <button
             type="button"
-            onClick={() => setViewMode("simulation")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              viewMode === "simulation"
+            onClick={() => setViewMode("split")}
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              viewMode === "split"
                 ? "bg-white text-[#1E2629] shadow-sm font-bold"
                 : "text-[#727670] hover:text-[#1E2629]"
             }`}
           >
-            <Layers size={13} className={viewMode === "simulation" ? "text-[#1A6B7C]" : ""} />
-            <span>Interactive 3D Engine</span>
+            <Columns size={13} className={viewMode === "split" ? "text-[#2EC492]" : ""} />
+            <span>Split Comparison</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setViewMode("3d")}
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              viewMode === "3d"
+                ? "bg-white text-[#1E2629] shadow-sm font-bold"
+                : "text-[#727670] hover:text-[#1E2629]"
+            }`}
+          >
+            <Box size={13} className={viewMode === "3d" ? "text-[#1A6B7C]" : ""} />
+            <span>Real-time 3D Engine</span>
           </button>
         </div>
 
         {/* Top Right Action Tools */}
         <div className="pointer-events-auto flex items-center gap-2.5">
+          {/* Play / Pause Toggle */}
+          <button
+            type="button"
+            onClick={() => setIsPlaying((p) => !p)}
+            className="circle-btn"
+            title={isPlaying ? "Pause Scene (Space)" : "Play Scene (Space)"}
+            aria-label={isPlaying ? "Pause" : "Play"}
+          >
+            {isPlaying ? <Pause size={17} /> : <Play size={17} className="translate-x-0.5" />}
+          </button>
+
           {/* Sound Toggle Button */}
           <button
             type="button"
@@ -148,11 +184,11 @@ export const App: React.FC = () => {
             title="Toggle Spatial Ocean Sound (Key M)"
             aria-label="Toggle Spatial Ocean Sound"
           >
-            {!isMuted ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            {!isMuted ? <Volume2 size={17} /> : <VolumeX size={17} />}
           </button>
 
-          {/* Atmosphere & Scene Controls Button (in simulation mode) */}
-          {viewMode === "simulation" && (
+          {/* Atmosphere & Scene Controls Button (in 3D mode) */}
+          {viewMode === "3d" && (
             <button
               type="button"
               onClick={() => setIsControlsOpen((p) => !p)}
@@ -160,14 +196,14 @@ export const App: React.FC = () => {
               title="Scene Atmosphere & Realism Controls"
               aria-label="Atmosphere Controls"
             >
-              <Sliders size={18} />
+              <Sliders size={17} />
             </button>
           )}
         </div>
       </header>
 
-      {/* Atmosphere & Shader Controls Popover (Simulation Mode) */}
-      {isControlsOpen && viewMode === "simulation" && (
+      {/* Atmosphere & Shader Controls Popover (3D Mode) */}
+      {isControlsOpen && viewMode === "3d" && (
         <aside className="fixed top-20 right-6 z-40 w-80 p-5 rounded-2xl bg-[rgba(244,240,230,0.96)] text-[#1E2629] border border-[rgba(30,38,41,0.14)] shadow-2xl space-y-4 backdrop-blur-xl animate-in slide-in-from-top-3 duration-200">
           <div className="flex items-center justify-between border-b border-black/10 pb-3">
             <span className="text-xs font-bold tracking-wider text-[#727670] uppercase">
@@ -243,12 +279,14 @@ export const App: React.FC = () => {
           </div>
 
           <div className="pt-2 text-[11px] text-[#727670] text-center border-t border-black/10">
-            Drag to orbit · Scroll to zoom · Keys 1–4 · Key V toggles view
+            Drag to orbit · Scroll to zoom · Keys 1–4 · Key V toggles mode
           </div>
         </aside>
       )}
 
-      {/* Bottom Left Editorial Copy */}
+      {/* ============================================================= */}
+      {/* BOTTOM LEFT EDITORIAL COPY (AEGEAN MENTOR TYPOGRAPHY)          */}
+      {/* ============================================================= */}
       <section className="hud-editorial">
         <p className="editorial-kicker">{currentChapterSpec.kicker}</p>
         <h1 className="editorial-title">
@@ -258,7 +296,9 @@ export const App: React.FC = () => {
         <p className="editorial-subtitle">{currentChapterSpec.subtitle}</p>
       </section>
 
-      {/* Bottom Center Chapter Dock */}
+      {/* ============================================================= */}
+      {/* BOTTOM CENTER CHAPTER DOCK (AEGEAN SEGMENTED PILL)            */}
+      {/* ============================================================= */}
       <nav className="hud-dock" aria-label="Atoll camera chapters">
         {CHAPTERS.map((chapter, idx) => {
           const isActive = activeChapter === idx && !isOverview;
@@ -276,19 +316,64 @@ export const App: React.FC = () => {
         })}
       </nav>
 
-      {/* Bottom Right Overview Flyover Button (in simulation mode) */}
-      {viewMode === "simulation" && (
-        <div className="fixed right-6 bottom-6 z-40">
-          <button
-            type="button"
-            onClick={() => setIsOverview((p) => !p)}
-            className={`circle-btn ${isOverview ? "is-active" : ""}`}
-            title="Toggle Aerial Atoll Overview (Key O)"
-            aria-label="Toggle Aerial Overview"
-          >
-            <ArrowUpRight size={20} />
-          </button>
-        </div>
+      {/* ============================================================= */}
+      {/* BOTTOM RIGHT ACTION BUTTON (AEGEAN CIRCULAR GLASS BUTTON)     */}
+      {/* ============================================================= */}
+      <div className="fixed right-6 bottom-6 z-40">
+        <button
+          type="button"
+          onClick={() => setIsDetailsOpen((p) => !p)}
+          className={`circle-btn ${isDetailsOpen ? "is-active" : ""}`}
+          title="Scene Telemetry & Technical Specs"
+          aria-label="Scene Details"
+        >
+          <ArrowUpRight size={20} />
+        </button>
+      </div>
+
+      {/* Technical Specs & Telemetry Drawer */}
+      {isDetailsOpen && (
+        <aside className="fixed bottom-20 right-6 z-40 w-88 p-5 rounded-2xl bg-[rgba(244,240,230,0.96)] text-[#1E2629] border border-[rgba(30,38,41,0.14)] shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom-3 duration-200">
+          <div className="flex items-center justify-between border-b border-black/10 pb-3">
+            <span className="text-xs font-bold tracking-wider text-[#727670] uppercase">
+              GPT-6.1 Terra Engine Specs
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsDetailsOpen(false)}
+              className="text-[#727670] hover:text-[#1E2629]"
+            >
+              <X size={15} />
+            </button>
+          </div>
+
+          <div className="py-3 space-y-2.5 text-xs">
+            <div className="flex justify-between">
+              <span className="text-[#727670]">Chapter</span>
+              <span className="font-semibold">{currentChapterSpec.label}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#727670]">Resolution</span>
+              <span className="font-semibold">4K UHD · 60 FPS Native</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#727670]">Atmospheric Model</span>
+              <span className="font-semibold">Rayleigh &amp; Mie Scattering</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#727670]">Fluid Dynamics</span>
+              <span className="font-semibold">Multi-Octave Gerstner Swash</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#727670]">Tone Mapping</span>
+              <span className="font-semibold">ACES Filmic Color Grading</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#727670]">Audio</span>
+              <span className="font-semibold">WebAudio Procedural Spatial Waves</span>
+            </div>
+          </div>
+        </aside>
       )}
     </div>
   );
