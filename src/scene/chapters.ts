@@ -70,3 +70,10 @@ export const CHAPTERS: ChapterSpec[] = [
     durationSec: 5.0,
   },
 ];
+
+export const OVERVIEW_CAMERA = {
+  pos: [0.0, 34.0, 48.0] as [number, number, number],
+  lookAt: [0.0, 6.0, -10.0] as [number, number, number],
+  fov: 52,
+};
+
