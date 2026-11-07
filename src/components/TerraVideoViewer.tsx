@@ -251,25 +251,6 @@ export const TerraVideoViewer: React.FC<TerraVideoViewerProps> = ({
               className="relative z-10 w-full h-full object-cover pointer-events-none"
             />
 
-            {/* Video Overlays matching original post badges */}
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-              <div className="px-5 py-2 rounded-xl bg-[#FAF8F4]/95 text-[#181A1C] shadow-lg flex items-center gap-2 border border-black/10 backdrop-blur-md">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#2EC492] animate-pulse" />
-                <span className="text-sm font-semibold tracking-tight">
-                  GPT-6.1 Terra | 9th Iteration
-                </span>
-              </div>
-            </div>
-
-            <div className="absolute top-[52%] left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-              <div className="px-5 py-2 rounded-xl bg-[#FAF8F4]/95 text-[#181A1C] shadow-lg flex items-center gap-2 border border-black/10 backdrop-blur-md">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#E59846]" />
-                <span className="text-sm font-semibold tracking-tight">
-                  GPT-6.1 Terra | 1st Attempt
-                </span>
-              </div>
-            </div>
-
             {/* Horizontal Split Line from Video */}
             <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-white/40 pointer-events-none shadow-sm z-20" />
 

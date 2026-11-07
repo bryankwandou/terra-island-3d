@@ -276,19 +276,21 @@ export const App: React.FC = () => {
         </aside>
       )}
 
-      {/* Bottom Left Editorial Scene Copy */}
-      <section className="fixed bottom-24 sm:bottom-28 left-4 sm:left-8 z-30 max-w-sm sm:max-w-md pointer-events-none drop-shadow-md">
-        <p className="text-xs font-bold tracking-widest text-[#E59846] uppercase mb-1">
-          {currentChapterSpec.kicker}
-        </p>
-        <h1 className="font-serif text-3xl sm:text-4xl font-normal leading-tight text-white mb-2">
-          {currentChapterSpec.titleLines[0]} <br />
-          {currentChapterSpec.titleLines[1]}
-        </h1>
-        <p className="text-xs sm:text-sm text-white/70 leading-relaxed">
-          {currentChapterSpec.subtitle}
-        </p>
-      </section>
+      {/* Bottom Left Editorial Scene Copy (Visible in 3D Simulation Mode) */}
+      {viewMode === "3d" && (
+        <section className="fixed bottom-24 sm:bottom-28 left-4 sm:left-8 z-30 max-w-sm sm:max-w-md pointer-events-none drop-shadow-md">
+          <p className="text-xs font-bold tracking-widest text-[#E59846] uppercase mb-1">
+            {currentChapterSpec.kicker}
+          </p>
+          <h1 className="font-serif text-3xl sm:text-4xl font-normal leading-tight text-white mb-2">
+            {currentChapterSpec.titleLines[0]} <br />
+            {currentChapterSpec.titleLines[1]}
+          </h1>
+          <p className="text-xs sm:text-sm text-white/70 leading-relaxed">
+            {currentChapterSpec.subtitle}
+          </p>
+        </section>
+      )}
 
       {/* Bottom Center 4-Scene Chapter Navigation Dock */}
       <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-1.5 rounded-full bg-[#0E161D]/85 backdrop-blur-2xl border border-white/15 shadow-2xl">
