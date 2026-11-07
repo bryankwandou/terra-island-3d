@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { CHAPTERS } from "./scene/chapters";
 import { TerraCanvas3D } from "./components/TerraCanvas3D";
-import { TerraVideoViewer } from "./components/TerraVideoViewer";
+import { TerraViewMode } from "./scene/raymarchEngine";
 import { TerraSoundscape } from "./scene/audio";
 
 export const App: React.FC = () => {
@@ -24,16 +24,16 @@ export const App: React.FC = () => {
   const [isMuted, setIsMuted] = useState(true);
   const [isControlsOpen, setIsControlsOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"photorealistic" | "reel" | "split" | "3d">(() => {
+  const [viewMode, setViewMode] = useState<TerraViewMode>(() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      const m = params.get("mode");
-      if (m === "3d" || m === "split" || m === "reel" || m === "photorealistic") return m;
-      if (window.location.hash === "#3d") return "3d";
+      const m = params.get("mode") as TerraViewMode | null;
+      if (m === "photorealistic" || m === "reel" || m === "split" || m === "baseline") return m;
+      if (window.location.hash === "#baseline") return "baseline";
       if (window.location.hash === "#split") return "split";
       if (window.location.hash === "#reel") return "reel";
     } catch (_) {
-      // ignore SSR or fallback
+      // fallback
     }
     return "photorealistic";
   });
@@ -51,7 +51,7 @@ export const App: React.FC = () => {
     soundscapeRef.current = new TerraSoundscape();
   }, []);
 
-  const changeViewMode = (mode: "photorealistic" | "reel" | "split" | "3d") => {
+  const changeViewMode = (mode: TerraViewMode) => {
     setViewMode(mode);
     try {
       const url = new URL(window.location.href);
@@ -94,7 +94,7 @@ export const App: React.FC = () => {
             : prev === "reel"
             ? "split"
             : prev === "split"
-            ? "3d"
+            ? "baseline"
             : "photorealistic",
         );
       }
@@ -108,32 +108,21 @@ export const App: React.FC = () => {
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-[#070C10] text-[#F7F4ED]">
       {/* ============================================================= */}
-      {/* VIEWPORT LAYER (100% FULLSCREEN IMMERSIVE, NO BLACK BARS)     */}
+      {/* 100% PURE REAL-TIME 3D WEBGL ENGINE VIEWPORT (ZERO VIDEO TAG) */}
       {/* ============================================================= */}
-      {viewMode === "3d" ? (
-        <TerraCanvas3D
-          activeChapter={activeChapter}
-          isDirector={isPlaying}
-          isSplit={false}
-          isOverview={isOverview}
-          sunElevation={sunElevation}
-          waveStrength={waveStrength}
-          mistDensity={mistDensity}
-          waterClarity={waterClarity}
-        />
-      ) : (
-        <TerraVideoViewer
-          activeChapter={activeChapter}
-          isPlaying={isPlaying}
-          onChapterChange={setActiveChapter}
-          onPlayPauseToggle={() => setIsPlaying((p) => !p)}
-          isMuted={isMuted}
-          onToggleMute={handleToggleAudio}
-          displayMode={viewMode}
-          sliderPosition={sliderPosition}
-          onSliderChange={setSliderPosition}
-        />
-      )}
+      <TerraCanvas3D
+        activeChapter={activeChapter}
+        isDirector={isPlaying}
+        viewMode={viewMode}
+        sliderPosition={sliderPosition}
+        onSliderChange={setSliderPosition}
+        isOverview={isOverview}
+        sunElevation={sunElevation}
+        waveStrength={waveStrength}
+        mistDensity={mistDensity}
+        waterClarity={waterClarity}
+        onChapterAdvance={handleChapterSelect}
+      />
 
       {/* ============================================================= */}
       {/* TOP FLOATING GLASS HUD BAR (UNIFIED, NON-COLLIDING)           */}
@@ -149,110 +138,112 @@ export const App: React.FC = () => {
           </span>
         </div>
 
-        {/* Top Center Mode Segmented Pill */}
+        {/* Top Center Mode Segmented Pill: 100% Real-Time 3D Engine Modes */}
         <div className="pointer-events-auto flex items-center p-1 rounded-full bg-[rgba(244,240,230,0.94)] border border-[rgba(30,38,41,0.14)] shadow-2xl backdrop-blur-xl">
           <button
             type="button"
             onClick={() => changeViewMode("photorealistic")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${viewMode === "photorealistic"
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              viewMode === "photorealistic"
                 ? "bg-white text-[#1E2629] shadow-sm font-bold"
                 : "text-[#727670] hover:text-[#1E2629]"
-              }`}
+            }`}
           >
             <Sparkles size={13} className={viewMode === "photorealistic" ? "text-[#E59846]" : ""} />
-            <span>9th Iteration (Cinematic)</span>
+            <span>9th Iteration (Photorealistic 3D)</span>
           </button>
 
           <button
             type="button"
             onClick={() => changeViewMode("reel")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${viewMode === "reel"
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              viewMode === "reel"
                 ? "bg-white text-[#1E2629] shadow-sm font-bold"
                 : "text-[#727670] hover:text-[#1E2629]"
-              }`}
+            }`}
           >
             <Film size={13} className={viewMode === "reel" ? "text-[#D4893B]" : ""} />
-            <span>Comparison Reel (9:16)</span>
+            <span>Comparison Reel (9:16 Vertical 3D)</span>
           </button>
 
           <button
             type="button"
             onClick={() => changeViewMode("split")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${viewMode === "split"
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              viewMode === "split"
                 ? "bg-white text-[#1E2629] shadow-sm font-bold"
                 : "text-[#727670] hover:text-[#1E2629]"
-              }`}
+            }`}
           >
             <Columns size={13} className={viewMode === "split" ? "text-[#2EC492]" : ""} />
-            <span>Split Slider</span>
+            <span>Interactive Split Wipe 3D</span>
           </button>
 
           <button
             type="button"
-            onClick={() => changeViewMode("3d")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${viewMode === "3d"
+            onClick={() => changeViewMode("baseline")}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              viewMode === "baseline"
                 ? "bg-white text-[#1E2629] shadow-sm font-bold"
                 : "text-[#727670] hover:text-[#1E2629]"
-              }`}
+            }`}
           >
-            <Box size={13} className={viewMode === "3d" ? "text-[#1A6B7C]" : ""} />
-            <span>Real-time 3D Engine</span>
+            <Box size={13} className={viewMode === "baseline" ? "text-[#1A6B7C]" : ""} />
+            <span>1st Attempt (Low-Poly Baseline)</span>
           </button>
         </div>
 
         {/* Top Right Action Tools */}
         <div className="pointer-events-auto flex items-center gap-2.5">
-          {/* Play / Pause Toggle */}
+          {/* Play / Pause Toggle (Cinematic Flythrough vs Free Orbit) */}
           <button
             type="button"
             onClick={() => setIsPlaying((p) => !p)}
             className="circle-btn"
-            title={isPlaying ? "Pause Scene (Space)" : "Play Scene (Space)"}
+            title={isPlaying ? "Pause Camera Flythrough (Space)" : "Resume Cinematic Flythrough (Space)"}
             aria-label={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? <Pause size={17} /> : <Play size={17} className="translate-x-0.5" />}
           </button>
 
-          {/* Sound Toggle Button */}
+          {/* Sound Toggle Button (100% Procedural Web Audio API) */}
           <button
             type="button"
             onClick={handleToggleAudio}
             className={`circle-btn ${!isMuted ? "is-active" : ""}`}
-            title="Toggle Spatial Ocean Sound (Key M)"
-            aria-label="Toggle Spatial Ocean Sound"
+            title="Toggle Spatial Ocean Soundscape (Key M)"
+            aria-label="Toggle Spatial Ocean Soundscape"
           >
             {!isMuted ? <Volume2 size={17} /> : <VolumeX size={17} />}
           </button>
 
-          {/* Atmosphere & Scene Controls Button (in 3D mode) */}
-          {viewMode === "3d" && (
-            <button
-              type="button"
-              onClick={() => setIsControlsOpen((p) => !p)}
-              className={`circle-btn ${isControlsOpen ? "is-active" : ""}`}
-              title="Scene Atmosphere & Realism Controls"
-              aria-label="Atmosphere Controls"
-            >
-              <Sliders size={17} />
-            </button>
-          )}
+          {/* Atmosphere & Scene Controls Button */}
+          <button
+            type="button"
+            onClick={() => setIsControlsOpen((p) => !p)}
+            className={`circle-btn ${isControlsOpen ? "is-active" : ""}`}
+            title="Scene Atmosphere & Realism Controls"
+            aria-label="Atmosphere Controls"
+          >
+            <Sliders size={17} />
+          </button>
         </div>
       </header>
 
-      {/* Atmosphere & Shader Controls Popover (3D Mode) */}
-      {isControlsOpen && viewMode === "3d" && (
+      {/* Atmosphere & Shader Controls Popover */}
+      {isControlsOpen && (
         <aside className="fixed top-20 right-6 z-40 w-80 p-5 rounded-2xl bg-[rgba(244,240,230,0.96)] text-[#1E2629] border border-[rgba(30,38,41,0.14)] shadow-2xl space-y-4 backdrop-blur-xl animate-in slide-in-from-top-3 duration-200">
           <div className="flex items-center justify-between border-b border-black/10 pb-3">
             <span className="text-xs font-bold tracking-wider text-[#727670] uppercase">
               Atmosphere &amp; Light
             </span>
-            <span className="text-[11px] font-semibold text-[#1A6B7C]">60 FPS · ACES</span>
+            <span className="text-[11px] font-semibold text-[#1A6B7C]">60 FPS · ACES PBR</span>
           </div>
 
           <div className="space-y-3.5 text-xs">
             <div>
               <div className="flex justify-between mb-1">
-                <span className="font-medium text-[#1E2629]">Sun Elevation</span>
+                <span className="font-medium text-[#1E2629]">Sun Elevation &amp; Glint</span>
                 <span className="text-[#727670] font-semibold">
                   {Math.round(sunElevation * 100)}%
                 </span>
@@ -269,7 +260,7 @@ export const App: React.FC = () => {
 
             <div>
               <div className="flex justify-between mb-1">
-                <span className="font-medium text-[#1E2629]">Sea Swell &amp; Breeze</span>
+                <span className="font-medium text-[#1E2629]">Gerstner Ocean Waves</span>
                 <span className="text-[#727670] font-semibold">{Math.round(waveStrength * 100)}%</span>
               </div>
               <input
@@ -284,7 +275,7 @@ export const App: React.FC = () => {
 
             <div>
               <div className="flex justify-between mb-1">
-                <span className="font-medium text-[#1E2629]">Volumetric Mist &amp; God Rays</span>
+                <span className="font-medium text-[#1E2629]">Volumetric Mist &amp; Spray</span>
                 <span className="text-[#727670] font-semibold">{Math.round(mistDensity * 100)}%</span>
               </div>
               <input
@@ -299,7 +290,7 @@ export const App: React.FC = () => {
 
             <div>
               <div className="flex justify-between mb-1">
-                <span className="font-medium text-[#1E2629]">Water Caustics &amp; Clarity</span>
+                <span className="font-medium text-[#1E2629]">Lagoon Water Clarity &amp; Caustics</span>
                 <span className="text-[#727670] font-semibold">
                   {Math.round(waterClarity * 100)}%
                 </span>
@@ -322,7 +313,7 @@ export const App: React.FC = () => {
       )}
 
       {/* ============================================================= */}
-      {/* BOTTOM LEFT EDITORIAL COPY (AEGEAN MENTOR TYPOGRAPHY)          */}
+      {/* BOTTOM LEFT EDITORIAL COPY                                    */}
       {/* ============================================================= */}
       <section className="hud-editorial">
         <p className="editorial-kicker">{currentChapterSpec.kicker}</p>
@@ -334,7 +325,7 @@ export const App: React.FC = () => {
       </section>
 
       {/* ============================================================= */}
-      {/* BOTTOM CENTER CHAPTER DOCK (AEGEAN SEGMENTED PILL)            */}
+      {/* BOTTOM CENTER CHAPTER DOCK                                    */}
       {/* ============================================================= */}
       <nav className="hud-dock" aria-label="Atoll camera chapters">
         {CHAPTERS.map((chapter, idx) => {
@@ -354,7 +345,7 @@ export const App: React.FC = () => {
       </nav>
 
       {/* ============================================================= */}
-      {/* BOTTOM RIGHT ACTION BUTTON (AEGEAN CIRCULAR GLASS BUTTON)     */}
+      {/* BOTTOM RIGHT ACTION BUTTON                                    */}
       {/* ============================================================= */}
       <div className="fixed right-6 bottom-6 z-40">
         <button
@@ -390,24 +381,28 @@ export const App: React.FC = () => {
               <span className="font-semibold">{currentChapterSpec.label}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[#727670]">Resolution</span>
-              <span className="font-semibold">4K UHD · 60 FPS Native</span>
+              <span className="text-[#727670]">Rendering Pipeline</span>
+              <span className="font-semibold">100% WebGL PBR (Zero Video)</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#727670]">Frame Rate</span>
+              <span className="font-semibold">60 FPS Native WebGL</span>
             </div>
             <div className="flex justify-between">
               <span className="text-[#727670]">Atmospheric Model</span>
-              <span className="font-semibold">Rayleigh &amp; Mie Scattering</span>
+              <span className="font-semibold">Mie &amp; Rayleigh Solar Scattering</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[#727670]">Fluid Dynamics</span>
-              <span className="font-semibold">Multi-Octave Gerstner Swash</span>
+              <span className="text-[#727670]">Ocean Engine</span>
+              <span className="font-semibold">4-Octave Gerstner Analytical Wave</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[#727670]">Tone Mapping</span>
-              <span className="font-semibold">ACES Filmic Color Grading</span>
+              <span className="text-[#727670]">Underwater Caustics</span>
+              <span className="font-semibold">Dynamic Voronoi Light Dispersion</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[#727670]">Audio</span>
-              <span className="font-semibold">WebAudio Procedural Spatial Waves</span>
+              <span className="text-[#727670]">Audio Synthesis</span>
+              <span className="font-semibold">100% Procedural Web Audio API</span>
             </div>
           </div>
         </aside>

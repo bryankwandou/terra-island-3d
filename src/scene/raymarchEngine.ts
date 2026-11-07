@@ -1,5 +1,7 @@
 import * as THREE from "three";
 
+export type TerraViewMode = "photorealistic" | "reel" | "split" | "baseline";
+
 export interface RaymarchEngineHandles {
   render: (
     renderer: THREE.WebGLRenderer,
@@ -12,7 +14,8 @@ export interface RaymarchEngineHandles {
       waveStrength: number;
       mistDensity: number;
       waterClarity: number;
-      isSplitMode: boolean;
+      viewMode: TerraViewMode;
+      sliderPosition: number;
     },
   ) => void;
   resize: (width: number, height: number) => void;
@@ -625,7 +628,8 @@ export function createRaymarchEngine(): RaymarchEngineHandles {
         waveStrength,
         mistDensity,
         waterClarity,
-        isSplitMode,
+        viewMode,
+        sliderPosition,
       } = options;
 
       // Update active chapter scene
@@ -660,12 +664,16 @@ export function createRaymarchEngine(): RaymarchEngineHandles {
       const w = window.innerWidth;
       const h = window.innerHeight;
 
-      if (!isSplitMode) {
+      if (viewMode === "photorealistic") {
         renderer.setScissorTest(false);
         renderer.setViewport(0, 0, w, h);
         renderer.render(scene, camera);
-      } else {
-        // Live Split-Screen Comparison
+      } else if (viewMode === "baseline") {
+        renderer.setScissorTest(false);
+        renderer.setViewport(0, 0, w, h);
+        renderer.render(baselineScene, camera);
+      } else if (viewMode === "reel") {
+        // Live Split-Screen Comparison (9:16 Vertical Top/Bottom)
         // Top Viewport: Photorealistic 9th Iteration
         const halfH = Math.floor(h / 2);
         renderer.setScissorTest(true);
@@ -677,6 +685,22 @@ export function createRaymarchEngine(): RaymarchEngineHandles {
         // Bottom Viewport: 1st Attempt Baseline
         renderer.setViewport(0, 0, w, halfH);
         renderer.setScissor(0, 0, w, halfH);
+        renderer.render(baselineScene, camera);
+      } else if (viewMode === "split") {
+        // Interactive Horizontal Split-Screen Slider Wipe
+        // Left Viewport: Photorealistic 9th Iteration
+        // Right Viewport: 1st Attempt Baseline
+        const splitX = Math.max(1, Math.min(w - 1, Math.floor(w * (sliderPosition / 100))));
+        renderer.setScissorTest(true);
+
+        // Left viewport: 9th Iteration PBR
+        renderer.setViewport(0, 0, splitX, h);
+        renderer.setScissor(0, 0, splitX, h);
+        renderer.render(scene, camera);
+
+        // Right viewport: 1st Attempt Baseline
+        renderer.setViewport(splitX, 0, w - splitX, h);
+        renderer.setScissor(splitX, 0, w - splitX, h);
         renderer.render(baselineScene, camera);
       }
     },
