@@ -10,6 +10,7 @@ import {
   Box,
   ArrowUpRight,
   X,
+  Film,
 } from "lucide-react";
 import { CHAPTERS } from "./scene/chapters";
 import { TerraCanvas3D } from "./components/TerraCanvas3D";
@@ -23,7 +24,7 @@ export const App: React.FC = () => {
   const [isMuted, setIsMuted] = useState(true);
   const [isControlsOpen, setIsControlsOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"photorealistic" | "split" | "3d">("photorealistic");
+  const [viewMode, setViewMode] = useState<"photorealistic" | "reel" | "split" | "3d">("photorealistic");
   const [sliderPosition, setSliderPosition] = useState(50);
 
   // Atmosphere & Light Parameters for Real-time Simulation
@@ -67,7 +68,13 @@ export const App: React.FC = () => {
         setIsOverview((prev) => !prev);
       } else if (e.key.toLowerCase() === "v") {
         setViewMode((prev) =>
-          prev === "photorealistic" ? "split" : prev === "split" ? "3d" : "photorealistic",
+          prev === "photorealistic"
+            ? "reel"
+            : prev === "reel"
+            ? "split"
+            : prev === "split"
+            ? "3d"
+            : "photorealistic",
         );
       }
     };
@@ -126,37 +133,46 @@ export const App: React.FC = () => {
           <button
             type="button"
             onClick={() => setViewMode("photorealistic")}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              viewMode === "photorealistic"
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${viewMode === "photorealistic"
                 ? "bg-white text-[#1E2629] shadow-sm font-bold"
                 : "text-[#727670] hover:text-[#1E2629]"
-            }`}
+              }`}
           >
             <Sparkles size={13} className={viewMode === "photorealistic" ? "text-[#E59846]" : ""} />
-            <span>9th Iteration (Photorealistic)</span>
+            <span>9th Iteration (Cinematic)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setViewMode("reel")}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${viewMode === "reel"
+                ? "bg-white text-[#1E2629] shadow-sm font-bold"
+                : "text-[#727670] hover:text-[#1E2629]"
+              }`}
+          >
+            <Film size={13} className={viewMode === "reel" ? "text-[#D4893B]" : ""} />
+            <span>Comparison Reel (9:16)</span>
           </button>
 
           <button
             type="button"
             onClick={() => setViewMode("split")}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              viewMode === "split"
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${viewMode === "split"
                 ? "bg-white text-[#1E2629] shadow-sm font-bold"
                 : "text-[#727670] hover:text-[#1E2629]"
-            }`}
+              }`}
           >
             <Columns size={13} className={viewMode === "split" ? "text-[#2EC492]" : ""} />
-            <span>Split Comparison</span>
+            <span>Split Slider</span>
           </button>
 
           <button
             type="button"
             onClick={() => setViewMode("3d")}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              viewMode === "3d"
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${viewMode === "3d"
                 ? "bg-white text-[#1E2629] shadow-sm font-bold"
                 : "text-[#727670] hover:text-[#1E2629]"
-            }`}
+              }`}
           >
             <Box size={13} className={viewMode === "3d" ? "text-[#1A6B7C]" : ""} />
             <span>Real-time 3D Engine</span>
