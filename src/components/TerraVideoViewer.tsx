@@ -25,10 +25,10 @@ interface TerraVideoViewerProps {
 
 const CHAPTER_TIMESTAMPS = [0.0, 5.0, 10.0, 15.0];
 const CHAPTER_POSTERS = [
-  "/posters/chapter_0.jpg",
-  "/posters/chapter_1.jpg",
-  "/posters/chapter_2.jpg",
-  "/posters/chapter_3.jpg",
+  "./posters/chapter_0.jpg",
+  "./posters/chapter_1.jpg",
+  "./posters/chapter_2.jpg",
+  "./posters/chapter_3.jpg",
 ];
 
 const CHAPTER_METADATA = [
@@ -197,7 +197,7 @@ export const TerraVideoViewer: React.FC<TerraVideoViewerProps> = ({
             <div className="absolute inset-0 w-screen h-full overflow-hidden">
               <video
                 ref={videoPrimaryRef}
-                src="/video/terra-comparison.mp4"
+                src="./video/terra-comparison.mp4"
                 poster={CHAPTER_POSTERS[activeChapter]}
                 playsInline
                 autoPlay
@@ -234,7 +234,7 @@ export const TerraVideoViewer: React.FC<TerraVideoViewerProps> = ({
             <div className="absolute inset-0 w-screen h-full overflow-hidden">
               <video
                 ref={videoSecondaryRef}
-                src="/video/terra-comparison.mp4"
+                src="./video/terra-comparison.mp4"
                 poster={CHAPTER_POSTERS[activeChapter]}
                 playsInline
                 autoPlay
@@ -281,7 +281,7 @@ export const TerraVideoViewer: React.FC<TerraVideoViewerProps> = ({
           <div className="relative h-[85vh] aspect-[9/16] rounded-3xl overflow-hidden shadow-2xl border border-white/15 bg-black">
             <video
               ref={videoPrimaryRef}
-              src="/video/terra-comparison.mp4"
+              src="./video/terra-comparison.mp4"
               poster={CHAPTER_POSTERS[activeChapter]}
               playsInline
               autoPlay
