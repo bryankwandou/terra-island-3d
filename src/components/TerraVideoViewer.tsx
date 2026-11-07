@@ -80,7 +80,7 @@ export const TerraVideoViewer: React.FC<TerraVideoViewerProps> = ({
   const videoSecondaryRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [displayLayout, setDisplayLayout] = useState<"widescreen" | "reel">("widescreen");
+  const [displayLayout, setDisplayLayout] = useState<"widescreen" | "reel">("reel");
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(20);
 
@@ -207,10 +207,10 @@ export const TerraVideoViewer: React.FC<TerraVideoViewerProps> = ({
                 onLoadedMetadata={handleLoadedMetadata}
                 style={{
                   width: "100%",
-                  height: "200%",
+                  height: "220%",
                   objectFit: "cover",
-                  objectPosition: "top center",
-                  transform: "translateY(0%)",
+                  objectPosition: "center 20%",
+                  transform: "translateY(-12%)",
                 }}
                 className="pointer-events-none"
               />
@@ -242,10 +242,10 @@ export const TerraVideoViewer: React.FC<TerraVideoViewerProps> = ({
                 muted={true}
                 style={{
                   width: "100%",
-                  height: "200%",
+                  height: "220%",
                   objectFit: "cover",
-                  objectPosition: "bottom center",
-                  transform: "translateY(-50%)",
+                  objectPosition: "center 70%",
+                  transform: "translateY(-62%)",
                 }}
                 className="pointer-events-none"
               />
