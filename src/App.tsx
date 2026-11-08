@@ -18,7 +18,14 @@ import { TerraViewMode } from "./scene/raymarchEngine";
 import { TerraSoundscape } from "./scene/audio";
 
 export const App: React.FC = () => {
-  const [activeChapter, setActiveChapter] = useState(0);
+  const [activeChapter, setActiveChapter] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const c = parseInt(params.get("ch") || params.get("chapter") || "0", 10);
+      if (!isNaN(c) && c >= 0 && c < CHAPTERS.length) return c;
+    } catch (_) {}
+    return 0;
+  });
   const [isPlaying, setIsPlaying] = useState(true);
   const [isOverview, setIsOverview] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
