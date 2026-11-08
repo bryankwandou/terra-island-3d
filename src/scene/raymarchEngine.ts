@@ -1,5 +1,14 @@
 import * as THREE from "three";
 import { CHAPTERS } from "./chapters";
+import {
+  createSandTexture,
+  createBasaltRockTexture,
+  createTeakWoodTexture,
+  createConcreteTexture,
+  createWaveNormalTexture,
+  createRadialMistTexture,
+  createGodRayTexture,
+} from "./proceduralTextures";
 
 export type TerraViewMode = "photorealistic" | "reel" | "split" | "baseline";
 
@@ -22,111 +31,86 @@ export interface RaymarchEngineHandles {
   resize: (width: number, height: number) => void;
 }
 
-// ============================================================================
-// PROCEDURAL TEXTURE GENERATORS
-// ============================================================================
-
-function createRadialMistTexture(): THREE.CanvasTexture {
-  const canvas = document.createElement("canvas");
-  canvas.width = 128;
-  canvas.height = 128;
-  const ctx = canvas.getContext("2d")!;
-  const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-  grad.addColorStop(0, "rgba(240, 248, 255, 0.85)");
-  grad.addColorStop(0.35, "rgba(215, 235, 248, 0.45)");
-  grad.addColorStop(0.7, "rgba(190, 220, 240, 0.12)");
-  grad.addColorStop(1, "rgba(190, 220, 240, 0.0)");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 128, 128);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.needsUpdate = true;
-  return tex;
-}
-
-function createGodRayTexture(): THREE.CanvasTexture {
-  const canvas = document.createElement("canvas");
-  canvas.width = 256;
-  canvas.height = 512;
-  const ctx = canvas.getContext("2d")!;
-  const grad = ctx.createLinearGradient(0, 0, 0, 512);
-  grad.addColorStop(0, "rgba(255, 242, 205, 0.65)");
-  grad.addColorStop(0.5, "rgba(255, 225, 165, 0.3)");
-  grad.addColorStop(1, "rgba(255, 200, 130, 0.0)");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 256, 512);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.needsUpdate = true;
-  return tex;
-}
-
-function createWaveNormalTexture(): THREE.CanvasTexture {
-  const size = 256;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
-  const imgData = ctx.createImageData(size, size);
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const idx = (y * size + x) * 4;
-      const nx = Math.sin(x * 0.15) * 0.5 + Math.sin((x + y) * 0.08) * 0.5;
-      const ny = Math.cos(y * 0.15) * 0.5 + Math.cos((x - y) * 0.08) * 0.5;
-      imgData.data[idx] = Math.floor((nx * 0.5 + 0.5) * 255);
-      imgData.data[idx + 1] = Math.floor((ny * 0.5 + 0.5) * 255);
-      imgData.data[idx + 2] = 255;
-      imgData.data[idx + 3] = 255;
-    }
-  }
-  ctx.putImageData(imgData, 0, 0);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(8, 8);
-  tex.needsUpdate = true;
-  return tex;
-}
-
 export function createRaymarchEngine(): RaymarchEngineHandles {
-  // Main World 3D Scene (Photorealistic 9th Iteration)
+  // ============================================================================
+  // SCENE CREATION (100% PURE PROCEDURAL 3D WEBGL)
+  // ============================================================================
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xf5a260);
   scene.fog = new THREE.FogExp2(0xe29b5b, 0.0035);
 
-  // Baseline World Scene (1st Attempt Low-poly)
   const baselineScene = new THREE.Scene();
-  baselineScene.background = new THREE.Color(0x73a8c6);
-  baselineScene.fog = new THREE.Fog(0x8bc3db, 30, 160);
+  baselineScene.fog = new THREE.Fog(0x8bc3db, 30, 180);
 
   // Textures
-  const textureLoader = new THREE.TextureLoader();
+  const sandTex = createSandTexture();
+  const basaltTex = createBasaltRockTexture();
+  const teakTex = createTeakWoodTexture();
+  const concreteTex = createConcreteTexture();
+  const waveNormalTex = createWaveNormalTexture();
   const mistTexture = createRadialMistTexture();
   const godRayTexture = createGodRayTexture();
-  const waveNormalTex = createWaveNormalTexture();
 
-  // Load high-res scene backdrops
-  const pbrBackdrops: THREE.Texture[] = [];
-  const baseBackdrops: THREE.Texture[] = [];
+  // ============================================================================
+  // PROCEDURAL SKY DOME (360° Infinite Atmospheric Depth)
+  // ============================================================================
+  const skyGeo = new THREE.SphereGeometry(280, 32, 20);
+  const skyMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTopColor: { value: new THREE.Color(0x1a3a5c) },
+      uBottomColor: { value: new THREE.Color(0xf69c5e) },
+      uSunColor: { value: new THREE.Color(0xfff2d4) },
+      uSunPos: { value: new THREE.Vector3(-40, 30, -60).normalize() },
+    },
+    vertexShader: `
+      varying vec3 vWorldPos;
+      void main() {
+        vec4 wp = modelMatrix * vec4(position, 1.0);
+        vWorldPos = wp.xyz;
+        gl_Position = projectionMatrix * viewMatrix * wp;
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 uTopColor;
+      uniform vec3 uBottomColor;
+      uniform vec3 uSunColor;
+      uniform vec3 uSunPos;
+      varying vec3 vWorldPos;
 
-  for (let i = 0; i < 4; i++) {
-    const pTex = textureLoader.load(`./textures/scene_${i}_pbr.jpg`);
-    pTex.colorSpace = THREE.SRGBColorSpace;
-    pTex.minFilter = THREE.LinearMipmapLinearFilter;
-    pbrBackdrops.push(pTex);
+      void main() {
+        vec3 dir = normalize(vWorldPos);
+        float h = clamp(dir.y * 1.8 + 0.12, 0.0, 1.0);
+        vec3 sky = mix(uBottomColor, uTopColor, pow(h, 0.72));
 
-    const bTex = textureLoader.load(`./textures/scene_${i}_base.jpg`);
-    bTex.colorSpace = THREE.SRGBColorSpace;
-    bTex.minFilter = THREE.LinearMipmapLinearFilter;
-    baseBackdrops.push(bTex);
-  }
+        float cosTheta = dot(dir, uSunPos);
+        float sunDisc = smoothstep(0.9982, 0.9996, cosTheta);
+        float sunGlow = pow(max(cosTheta, 0.0), 16.0) * 0.75;
+        vec3 col = sky + uSunColor * (sunDisc * 2.8 + sunGlow);
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `,
+    side: THREE.BackSide,
+    depthWrite: false,
+  });
+  const skyDome = new THREE.Mesh(skyGeo, skyMat);
+  scene.add(skyDome);
+
+  // Baseline Sky
+  const baseSkyMat = new THREE.MeshBasicMaterial({
+    color: 0x82b8d2,
+    side: THREE.BackSide,
+    depthWrite: false,
+  });
+  const baseSkyDome = new THREE.Mesh(skyGeo, baseSkyMat);
+  baselineScene.add(baseSkyDome);
 
   // Lighting
-  const ambientLight = new THREE.AmbientLight(0xffedd8, 1.4);
+  const ambientLight = new THREE.AmbientLight(0xffeedb, 1.4);
   scene.add(ambientLight);
 
   const hemiLight = new THREE.HemisphereLight(0xffdfb8, 0x142b3d, 1.3);
   scene.add(hemiLight);
 
-  const sunLight = new THREE.DirectionalLight(0xffecc2, 3.2);
+  const sunLight = new THREE.DirectionalLight(0xffecc2, 3.4);
   sunLight.position.set(-40, 30, -60);
   scene.add(sunLight);
 
@@ -137,7 +121,9 @@ export function createRaymarchEngine(): RaymarchEngineHandles {
   baseDir.position.set(20, 40, 20);
   baselineScene.add(baseDir);
 
-  // Palm tree generator
+  // ============================================================================
+  // PROCEDURAL PALM TREE BUILDER
+  // ============================================================================
   function createPalmTree(height = 7.5, curve = 0.8, angle = 0, isBaseline = false): THREE.Group {
     const palm = new THREE.Group();
     const trunkCurve = new THREE.CatmullRomCurve3([
@@ -150,12 +136,29 @@ export function createRaymarchEngine(): RaymarchEngineHandles {
     const trunkGeo = new THREE.TubeGeometry(trunkCurve, 12, 0.22, isBaseline ? 5 : 8, false);
     const trunkMat = isBaseline
       ? new THREE.MeshBasicMaterial({ color: 0x5a483a })
-      : new THREE.MeshStandardMaterial({ color: 0x423226, roughness: 0.9 });
+      : new THREE.MeshStandardMaterial({
+          color: 0x423226,
+          map: teakTex.map,
+          bumpMap: teakTex.bumpMap,
+          bumpScale: 0.04,
+          roughness: 0.9,
+        });
     palm.add(new THREE.Mesh(trunkGeo, trunkMat));
 
     const crownPos = trunkCurve.getPoint(1.0);
     const crown = new THREE.Group();
     crown.position.copy(crownPos);
+
+    // Coconuts
+    if (!isBaseline) {
+      const nutGeo = new THREE.SphereGeometry(0.24, 6, 6);
+      const nutMat = new THREE.MeshStandardMaterial({ color: 0x3d2919, roughness: 0.8 });
+      for (let n = 0; n < 4; n++) {
+        const nut = new THREE.Mesh(nutGeo, nutMat);
+        nut.position.set(Math.sin(n * 1.5) * 0.25, -0.2, Math.cos(n * 1.5) * 0.25);
+        crown.add(nut);
+      }
+    }
 
     const frondCount = isBaseline ? 6 : 14;
     for (let f = 0; f < frondCount; f++) {
@@ -180,45 +183,10 @@ export function createRaymarchEngine(): RaymarchEngineHandles {
     return palm;
   }
 
-  // Curved Cinematic Backdrop Generator
-  function createBackdropMesh(
-    tex: THREE.Texture,
-    camPos: [number, number, number],
-    lookAt: [number, number, number],
-    distance = 65,
-    width = 150,
-    height = 95,
-  ): THREE.Mesh {
-    const segments = 24;
-    const geo = new THREE.PlaneGeometry(width, height, segments, 1);
-    const posAttr = geo.attributes.position;
-    for (let i = 0; i < posAttr.count; i++) {
-      const x = posAttr.getX(i);
-      const z = (x * x) / (width * width) * 18.0;
-      posAttr.setZ(i, z);
-    }
-    geo.computeVertexNormals();
-
-    const mat = new THREE.MeshBasicMaterial({
-      map: tex,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-      fog: false,
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.renderOrder = -999;
-
-    const cPos = new THREE.Vector3(...camPos);
-    const lPos = new THREE.Vector3(...lookAt);
-    const dir = new THREE.Vector3().subVectors(lPos, cPos).normalize();
-    mesh.position.copy(cPos).addScaledVector(dir, distance);
-    mesh.lookAt(cPos);
-
-    return mesh;
-  }
-
-  // Ocean Shaders
-  const oceanGeo = new THREE.PlaneGeometry(160, 90, 80, 50);
+  // ============================================================================
+  // PROCEDURAL DYNAMIC GERSTNER OCEAN WATER SHADER
+  // ============================================================================
+  const oceanGeo = new THREE.PlaneGeometry(180, 110, 90, 60);
   oceanGeo.rotateX(-Math.PI / 2);
 
   const oceanMat = new THREE.ShaderMaterial({
@@ -287,18 +255,14 @@ export function createRaymarchEngine(): RaymarchEngineHandles {
   });
 
   // ============================================================================
-  // CHAPTER 0: SUNSET ATOLL
+  // CHAPTER 0: SUNSET ATOLL (Coral Reef Lagoon & Sand Spit)
   // ============================================================================
   const scene0Group = new THREE.Group();
   scene.add(scene0Group);
   const baseScene0Group = new THREE.Group();
   baselineScene.add(baseScene0Group);
 
-  const s0Backdrop = createBackdropMesh(pbrBackdrops[0], CHAPTERS[0].startCamPos, CHAPTERS[0].startLookAt);
-  scene0Group.add(s0Backdrop);
-  const baseS0Backdrop = createBackdropMesh(baseBackdrops[0], CHAPTERS[0].startCamPos, CHAPTERS[0].startLookAt);
-  baseScene0Group.add(baseS0Backdrop);
-
+  // Ocean
   const s0Ocean = new THREE.Mesh(oceanGeo, oceanMat);
   s0Ocean.position.set(0, 0.0, 0);
   scene0Group.add(s0Ocean);
@@ -310,152 +274,233 @@ export function createRaymarchEngine(): RaymarchEngineHandles {
   baseOcean.rotateX(-Math.PI / 2);
   baseScene0Group.add(baseOcean);
 
-  // Shoreline Sand Spit
-  const sandSpitGeo = new THREE.PlaneGeometry(28, 44, 24, 24);
-  sandSpitGeo.rotateX(-Math.PI / 2);
-  const sandSpitMat = new THREE.MeshStandardMaterial({
-    color: 0xddcaa8,
-    roughness: 0.55,
-    metalness: 0.15,
+  // Atoll Ring Outer Landspit
+  const atollSpitGeo = new THREE.TorusGeometry(38, 7.5, 16, 52, Math.PI * 0.85);
+  atollSpitGeo.rotateX(Math.PI / 2);
+  const atollSpitMat = new THREE.MeshStandardMaterial({
+    map: sandTex.map,
+    bumpMap: sandTex.bumpMap,
+    bumpScale: 0.035,
+    roughness: 0.65,
   });
-  const sandSpit = new THREE.Mesh(sandSpitGeo, sandSpitMat);
-  sandSpit.position.set(7.5, 0.14, 2.0);
+  const atollSpit = new THREE.Mesh(atollSpitGeo, atollSpitMat);
+  atollSpit.position.set(2.0, 0.22, -18.0);
+  scene0Group.add(atollSpit);
+
+  // Inner White Sand Spit Shoreline
+  const sandSpitGeo = new THREE.PlaneGeometry(36, 55, 32, 32);
+  sandSpitGeo.rotateX(-Math.PI / 2);
+  const sandSpit = new THREE.Mesh(sandSpitGeo, atollSpitMat);
+  sandSpit.position.set(8.5, 0.16, 4.0);
   scene0Group.add(sandSpit);
 
+  // Wet Shoreline Swash Mirror Plane
+  const wetSandGeo = new THREE.PlaneGeometry(28, 48, 16, 16);
+  wetSandGeo.rotateX(-Math.PI / 2);
+  const wetSandMat = new THREE.MeshStandardMaterial({
+    color: 0xd8c4a0,
+    roughness: 0.2,
+    metalness: 0.35,
+  });
+  const wetSand = new THREE.Mesh(wetSandGeo, wetSandMat);
+  wetSand.position.set(2.5, 0.18, 4.0);
+  scene0Group.add(wetSand);
+
+  // Subsurface Coral Rock Formations
+  const coralMat = new THREE.MeshStandardMaterial({
+    color: 0x2d483e,
+    map: basaltTex.map,
+    bumpMap: basaltTex.bumpMap,
+    bumpScale: 0.05,
+    roughness: 0.88,
+  });
+  for (let c = 0; c < 10; c++) {
+    const coral = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(1.4 + (c % 3) * 0.6, 1),
+      coralMat
+    );
+    coral.position.set(-6.0 + (c % 4) * 3.5, -0.4, 2.0 - c * 2.8);
+    coral.scale.set(1.4, 0.6, 1.4);
+    scene0Group.add(coral);
+  }
+
   // Palms for Scene 0
-  for (let p = 0; p < 14; p++) {
-    const angle = (p % 2 === 0 ? 0.35 : -0.3) + (p * 0.12);
-    const height = 6.2 + (p % 4) * 0.6;
-    const palm = createPalmTree(height, 0.7, angle, false);
-    palm.position.set(4.0 + (p % 4) * 2.8, 0.2, 8.0 - p * 2.2);
+  for (let p = 0; p < 20; p++) {
+    const angle = (p % 2 === 0 ? 0.35 : -0.32) + (p * 0.09);
+    const height = 6.4 + (p % 4) * 0.6;
+    const palm = createPalmTree(height, 0.75, angle, false);
+    palm.position.set(5.0 + (p % 4) * 2.5, 0.25, 10.0 - p * 2.0);
     scene0Group.add(palm);
 
-    const basePalm = createPalmTree(height, 0.7, angle, true);
-    basePalm.position.set(4.0 + (p % 4) * 2.8, 0.2, 8.0 - p * 2.2);
+    const basePalm = createPalmTree(height, 0.75, angle, true);
+    basePalm.position.set(5.0 + (p % 4) * 2.5, 0.25, 10.0 - p * 2.0);
     baseScene0Group.add(basePalm);
   }
 
   // ============================================================================
-  // CHAPTER 1: CLIFFSIDE LUXURY VILLAS
+  // CHAPTER 1: CLIFFSIDE LUXURY VILLAS (Modern Cantilevered Architecture)
   // ============================================================================
   const scene1Group = new THREE.Group();
   scene.add(scene1Group);
   const baseScene1Group = new THREE.Group();
   baselineScene.add(baseScene1Group);
 
-  const s1Backdrop = createBackdropMesh(pbrBackdrops[1], CHAPTERS[1].startCamPos, CHAPTERS[1].startLookAt);
-  scene1Group.add(s1Backdrop);
-  const baseS1Backdrop = createBackdropMesh(baseBackdrops[1], CHAPTERS[1].startCamPos, CHAPTERS[1].startLookAt);
-  baseScene1Group.add(baseS1Backdrop);
-
-  // Wet Sand Beach Shoreline
-  const beachGeo = new THREE.PlaneGeometry(80, 50, 24, 24);
-  beachGeo.rotateX(-Math.PI / 2);
-  const beachMat = new THREE.MeshStandardMaterial({
-    color: 0xd6c2a4,
-    roughness: 0.38,
-    metalness: 0.22,
-  });
-  const s1Beach = new THREE.Mesh(beachGeo, beachMat);
-  s1Beach.position.set(0, 0.05, 2.0);
+  // Sandy Beach & Wet Shoreline
+  const s1Beach = new THREE.Mesh(
+    new THREE.PlaneGeometry(90, 60, 24, 24),
+    new THREE.MeshStandardMaterial({
+      map: sandTex.map,
+      bumpMap: sandTex.bumpMap,
+      bumpScale: 0.03,
+      roughness: 0.55,
+    })
+  );
+  s1Beach.rotateX(-Math.PI / 2);
+  s1Beach.position.set(2.0, 0.08, 4.0);
   scene1Group.add(s1Beach);
 
-  // Cliff Rock Bluff on the left
-  const cliffGeo = new THREE.BoxGeometry(22, 18, 48);
+  // Wet sand reflection
+  const s1WetSand = new THREE.Mesh(wetSandGeo, wetSandMat);
+  s1WetSand.position.set(3.0, 0.1, 4.0);
+  scene1Group.add(s1WetSand);
+
+  // Coastal Basalt Cliff Bluff
   const cliffMat = new THREE.MeshStandardMaterial({
-    color: 0x332c26,
+    map: basaltTex.map,
+    bumpMap: basaltTex.bumpMap,
+    bumpScale: 0.08,
     roughness: 0.88,
   });
-  const cliff = new THREE.Mesh(cliffGeo, cliffMat);
-  cliff.position.set(-16.0, 7.5, -8.0);
+  const cliff = new THREE.Mesh(new THREE.BoxGeometry(26, 22, 54), cliffMat);
+  cliff.position.set(-18.0, 9.5, -8.0);
   scene1Group.add(cliff);
 
-  // 3 Cantilevered Modern Teak Villas
+  // 3 Stepped Modern Cantilevered Teak Villas
+  const teakMat = new THREE.MeshStandardMaterial({
+    map: teakTex.map,
+    bumpMap: teakTex.bumpMap,
+    bumpScale: 0.02,
+    roughness: 0.45,
+  });
+  const concreteMat = new THREE.MeshStandardMaterial({
+    map: concreteTex.map,
+    bumpMap: concreteTex.bumpMap,
+    bumpScale: 0.03,
+    roughness: 0.7,
+  });
+  const steelMat = new THREE.MeshStandardMaterial({
+    color: 0x1f2224,
+    roughness: 0.35,
+    metalness: 0.85,
+  });
+  const interiorGlowMat = new THREE.MeshStandardMaterial({
+    color: 0xffe0a3,
+    emissive: 0xffa438,
+    emissiveIntensity: 0.95,
+    roughness: 0.25,
+  });
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: 0xcee8f5,
+    roughness: 0.1,
+    metalness: 0.9,
+    transparent: true,
+    opacity: 0.45,
+  });
+
   for (let v = 0; v < 3; v++) {
     const villa = new THREE.Group();
-    const vz = 5.0 - v * 12.0;
-    const vx = -5.8 - v * 1.5;
-    const vy = 2.4 + v * 1.1;
+    const vz = 6.0 - v * 13.0;
+    const vx = -6.2 - v * 1.5;
+    const vy = 2.8 + v * 1.2;
 
-    // Foundation Slab
-    const slab = new THREE.Mesh(
-      new THREE.BoxGeometry(9.0, 0.5, 7.5),
-      new THREE.MeshStandardMaterial({ color: 0xc8b89d, roughness: 0.65 })
-    );
-    slab.position.set(vx, vy, vz);
-    villa.add(slab);
+    // Board-formed concrete foundation cantilever beam
+    const foundation = new THREE.Mesh(new THREE.BoxGeometry(4.0, 3.2, 5.0), concreteMat);
+    foundation.position.set(vx - 2.5, vy - 1.2, vz);
+    villa.add(foundation);
 
-    // Teak Roof Deck
-    const roof = new THREE.Mesh(
-      new THREE.BoxGeometry(9.5, 0.35, 8.0),
-      new THREE.MeshStandardMaterial({ color: 0x5a3d28, roughness: 0.45 })
-    );
-    roof.position.set(vx, vy + 3.2, vz);
+    // Teak floor slab & deck
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(9.6, 0.45, 7.8), teakMat);
+    deck.position.set(vx, vy, vz);
+    villa.add(deck);
+
+    // Teak roof canopy
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(10.0, 0.35, 8.2), teakMat);
+    roof.position.set(vx, vy + 3.4, vz);
     villa.add(roof);
 
-    // Warm Interior Glowing Room (2700K Architectural Lighting)
-    const room = new THREE.Mesh(
-      new THREE.BoxGeometry(7.0, 2.8, 5.5),
-      new THREE.MeshStandardMaterial({
-        color: 0xffe2aa,
-        emissive: 0xffaa44,
-        emissiveIntensity: 0.85,
-        roughness: 0.3,
-      })
-    );
-    room.position.set(vx - 0.8, vy + 1.6, vz);
+    // Modern steel posts
+    for (let c = 0; c < 4; c++) {
+      const px = vx + (c % 2 === 0 ? -4.2 : 4.2);
+      const pz = vz + (c < 2 ? -3.4 : 3.4);
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 3.4, 0.18), steelMat);
+      post.position.set(px, vy + 1.7, pz);
+      villa.add(post);
+    }
+
+    // Warm Interior Glowing Room
+    const room = new THREE.Mesh(new THREE.BoxGeometry(6.8, 2.9, 5.4), interiorGlowMat);
+    room.position.set(vx - 1.0, vy + 1.7, vz);
     villa.add(room);
 
-    // Cantilevered Infinity Plunge Pool
+    // Glass walls
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(7.0, 2.9, 5.6), glassMat);
+    glass.position.set(vx - 0.9, vy + 1.7, vz);
+    villa.add(glass);
+
+    // Cantilevered infinity plunge pool
     const pool = new THREE.Mesh(
-      new THREE.BoxGeometry(3.5, 0.3, 5.0),
+      new THREE.BoxGeometry(3.6, 0.3, 5.2),
       new THREE.MeshStandardMaterial({
         color: 0x1dbcc4,
-        roughness: 0.1,
-        metalness: 0.85,
+        roughness: 0.08,
+        metalness: 0.88,
       })
     );
-    pool.position.set(vx + 3.2, vy + 0.25, vz);
+    pool.position.set(vx + 3.4, vy + 0.22, vz);
     villa.add(pool);
 
     scene1Group.add(villa);
+
+    // Baseline Villa
+    const baseVilla = new THREE.Mesh(
+      new THREE.BoxGeometry(7.5, 3.5, 6.0),
+      new THREE.MeshBasicMaterial({ color: 0xb5a490 })
+    );
+    baseVilla.position.set(vx, vy + 1.7, vz);
+    baseScene1Group.add(baseVilla);
   }
 
   // Cliffside Palms
-  for (let p = 0; p < 8; p++) {
+  for (let p = 0; p < 10; p++) {
     const palm = createPalmTree(6.8 + (p % 3) * 0.7, 0.75, -0.4, false);
-    palm.position.set(-6.5 - (p % 3) * 2.5, 3.0 + p * 0.8, 4.0 - p * 3.5);
+    palm.position.set(-7.5 - (p % 3) * 2.2, 3.2 + p * 0.8, 5.0 - p * 3.2);
     scene1Group.add(palm);
   }
 
   // ============================================================================
-  // CHAPTER 2: JUNGLE WATERFALL GORGE
+  // CHAPTER 2: JUNGLE WATERFALL GORGE (Towering Canyon Cataract)
   // ============================================================================
   const scene2Group = new THREE.Group();
   scene.add(scene2Group);
   const baseScene2Group = new THREE.Group();
   baselineScene.add(baseScene2Group);
 
-  const s2Backdrop = createBackdropMesh(pbrBackdrops[2], CHAPTERS[2].startCamPos, CHAPTERS[2].startLookAt, 60, 160, 100);
-  scene2Group.add(s2Backdrop);
-  const baseS2Backdrop = createBackdropMesh(baseBackdrops[2], CHAPTERS[2].startCamPos, CHAPTERS[2].startLookAt, 60, 160, 100);
-  baseScene2Group.add(baseS2Backdrop);
-
-  // Left & Right Canyon Limestone Cliffs
-  const canyonMat = new THREE.MeshStandardMaterial({
-    color: 0x272e27,
-    roughness: 0.92,
-  });
-  const leftCanyon = new THREE.Mesh(new THREE.BoxGeometry(18, 38, 32), canyonMat);
-  leftCanyon.position.set(-14.5, 17.0, -14.0);
+  // Towering Left & Right Canyon Limestone Rock Walls
+  const leftCanyon = new THREE.Mesh(new THREE.BoxGeometry(22, 42, 38), cliffMat);
+  leftCanyon.position.set(-16.0, 19.0, -14.0);
   scene2Group.add(leftCanyon);
 
-  const rightCanyon = new THREE.Mesh(new THREE.BoxGeometry(18, 38, 32), canyonMat);
-  rightCanyon.position.set(14.5, 17.0, -14.0);
+  const rightCanyon = new THREE.Mesh(new THREE.BoxGeometry(22, 42, 38), cliffMat);
+  rightCanyon.position.set(16.0, 19.0, -14.0);
   scene2Group.add(rightCanyon);
 
+  // Back canyon horseshoe wall
+  const backCanyon = new THREE.Mesh(new THREE.BoxGeometry(40, 42, 16), cliffMat);
+  backCanyon.position.set(0.0, 19.0, -28.0);
+  scene2Group.add(backCanyon);
+
   // Dynamic Animated Waterfall Fluid Chute
-  const wfGeo = new THREE.PlaneGeometry(9.5, 32, 24, 64);
+  const wfGeo = new THREE.PlaneGeometry(10.5, 34, 28, 64);
   const wfMat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
@@ -472,40 +517,40 @@ export function createRaymarchEngine(): RaymarchEngineHandles {
       varying vec2 vUv;
 
       void main() {
-        float speed = uTime * 4.2;
-        float y = vUv.y * 12.0 + speed;
-        float x = vUv.x * 16.0;
-        float noise = sin(x * 1.5 + y) * cos(y * 1.8) * 0.5 + 0.5;
-        float foam = smoothstep(0.35, 0.85, noise);
+        float speed = uTime * 4.8;
+        float y = vUv.y * 14.0 + speed;
+        float x = vUv.x * 18.0;
+        float noise = sin(x * 1.6 + y) * cos(y * 1.9 + x * 0.4) * 0.5 + 0.5;
+        float foam = smoothstep(0.32, 0.82, noise);
 
-        vec3 blueBase = vec3(0.55, 0.82, 0.92);
+        vec3 blueBase = vec3(0.52, 0.82, 0.94);
         vec3 whiteFoam = vec3(0.98, 0.99, 1.0);
-        vec3 col = mix(blueBase, whiteFoam, foam * 0.92);
+        vec3 col = mix(blueBase, whiteFoam, foam * 0.94);
 
-        float edgeFade = smoothstep(0.0, 0.18, vUv.x) * smoothstep(1.0, 0.82, vUv.x);
-        gl_FragColor = vec4(col, edgeFade * 0.92);
+        float edgeFade = smoothstep(0.0, 0.16, vUv.x) * smoothstep(1.0, 0.84, vUv.x);
+        gl_FragColor = vec4(col, edgeFade * 0.94);
       }
     `,
     transparent: true,
     side: THREE.DoubleSide,
   });
   const waterfallMesh = new THREE.Mesh(wfGeo, wfMat);
-  waterfallMesh.position.set(0.0, 16.0, -18.0);
+  waterfallMesh.position.set(0.0, 17.0, -19.5);
   scene2Group.add(waterfallMesh);
 
   // Basin River Plunge Pool
-  const plungePoolGeo = new THREE.CircleGeometry(26, 32);
+  const plungePoolGeo = new THREE.CircleGeometry(28, 36);
   plungePoolGeo.rotateX(-Math.PI / 2);
   const plungePoolMat = new THREE.MeshStandardMaterial({
     color: 0x145242,
-    roughness: 0.22,
-    metalness: 0.65,
+    roughness: 0.18,
+    metalness: 0.72,
   });
   const plungePool = new THREE.Mesh(plungePoolGeo, plungePoolMat);
-  plungePool.position.set(0.0, 1.2, -10.0);
+  plungePool.position.set(0.0, 1.4, -10.0);
   scene2Group.add(plungePool);
 
-  // 45 Volumetric Mist Sprites rising from the cataract basin
+  // 60 Volumetric Mist Sprites rising from the cataract basin
   interface MistSpriteItem {
     mesh: THREE.Sprite;
     basePos: THREE.Vector3;
@@ -513,29 +558,29 @@ export function createRaymarchEngine(): RaymarchEngineHandles {
     rotSpeed: number;
   }
   const mistSprites: MistSpriteItem[] = [];
-  for (let m = 0; m < 45; m++) {
+  for (let m = 0; m < 60; m++) {
     const sMat = new THREE.SpriteMaterial({
       map: mistTexture,
       transparent: true,
-      opacity: 0.4,
+      opacity: 0.45,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
     const sprite = new THREE.Sprite(sMat);
-    const radius = 2.5 + Math.random() * 8.0;
+    const radius = 2.5 + Math.random() * 9.0;
     const ang = Math.random() * Math.PI * 2;
     const basePos = new THREE.Vector3(
       Math.cos(ang) * radius,
-      1.5 + Math.random() * 4.0,
-      -14.0 + Math.sin(ang) * radius * 0.6
+      1.5 + Math.random() * 5.0,
+      -15.0 + Math.sin(ang) * radius * 0.6
     );
     sprite.position.copy(basePos);
-    sprite.scale.setScalar(4.5 + Math.random() * 6.0);
+    sprite.scale.setScalar(5.0 + Math.random() * 7.0);
     scene2Group.add(sprite);
     mistSprites.push({
       mesh: sprite,
       basePos,
-      speed: 0.8 + Math.random() * 1.4,
+      speed: 0.9 + Math.random() * 1.5,
       rotSpeed: (Math.random() - 0.5) * 0.8,
     });
   }
@@ -544,68 +589,102 @@ export function createRaymarchEngine(): RaymarchEngineHandles {
   const godRayMat = new THREE.MeshBasicMaterial({
     map: godRayTexture,
     transparent: true,
-    opacity: 0.35,
+    opacity: 0.38,
     blending: THREE.AdditiveBlending,
     side: THREE.DoubleSide,
     depthWrite: false,
   });
-  const godRayMesh = new THREE.Mesh(new THREE.PlaneGeometry(16, 42), godRayMat);
-  godRayMesh.position.set(3.5, 18.0, -12.0);
+  const godRayMesh = new THREE.Mesh(new THREE.PlaneGeometry(18, 46), godRayMat);
+  godRayMesh.position.set(3.8, 19.0, -12.0);
   godRayMesh.rotation.z = -0.32;
   godRayMesh.rotation.y = 0.18;
   scene2Group.add(godRayMesh);
 
   // Gorge Jungle Palms & Ferns
-  for (let p = 0; p < 12; p++) {
+  for (let p = 0; p < 16; p++) {
     const side = p % 2 === 0 ? -1 : 1;
-    const palm = createPalmTree(6.2 + (p % 3) * 0.7, 0.75, side * 0.45, false);
-    palm.position.set(side * (5.5 + (p % 3) * 2.4), 2.5 + (p % 4) * 2.2, -6.0 - p * 1.8);
+    const palm = createPalmTree(6.4 + (p % 3) * 0.7, 0.75, side * 0.45, false);
+    palm.position.set(side * (5.8 + (p % 3) * 2.5), 2.5 + (p % 4) * 2.4, -6.0 - p * 1.6);
     scene2Group.add(palm);
   }
 
+  // Baseline Waterfall & Cliffs
+  const baseWaterfall = new THREE.Mesh(
+    new THREE.PlaneGeometry(10.5, 34),
+    new THREE.MeshBasicMaterial({ color: 0x8ec9e6 })
+  );
+  baseWaterfall.position.set(0.0, 17.0, -19.5);
+  baseScene2Group.add(baseWaterfall);
+
+  const baseCliffMat = new THREE.MeshBasicMaterial({ color: 0x5a544c });
+  const baseLeftCanyon = new THREE.Mesh(new THREE.BoxGeometry(22, 42, 38), baseCliffMat);
+  baseLeftCanyon.position.set(-16.0, 19.0, -14.0);
+  baseScene2Group.add(baseLeftCanyon);
+
+  const baseRightCanyon = new THREE.Mesh(new THREE.BoxGeometry(22, 42, 38), baseCliffMat);
+  baseRightCanyon.position.set(16.0, 19.0, -14.0);
+  baseScene2Group.add(baseRightCanyon);
+
   // ============================================================================
-  // CHAPTER 3: CRESCENT BAY
+  // CHAPTER 3: CRESCENT BAY (Layered Headlands & Turquoise Lagoon)
   // ============================================================================
   const scene3Group = new THREE.Group();
   scene.add(scene3Group);
   const baseScene3Group = new THREE.Group();
   baselineScene.add(baseScene3Group);
 
-  const s3Backdrop = createBackdropMesh(pbrBackdrops[3], CHAPTERS[3].startCamPos, CHAPTERS[3].startLookAt);
-  scene3Group.add(s3Backdrop);
-  const baseS3Backdrop = createBackdropMesh(baseBackdrops[3], CHAPTERS[3].startCamPos, CHAPTERS[3].startLookAt);
-  baseScene3Group.add(baseS3Backdrop);
-
-  // Turquoise Shallow Bay Lagoon
+  // Turquoise Bay Ocean
   const bayWater = new THREE.Mesh(oceanGeo, oceanMat);
   bayWater.position.set(0, 0.0, 0);
   scene3Group.add(bayWater);
 
   // Sweeping Crescent Beach Sandspit
-  const crescentGeo = new THREE.TorusGeometry(32, 5.5, 16, 48, Math.PI * 0.75);
+  const crescentGeo = new THREE.TorusGeometry(34, 6.0, 16, 52, Math.PI * 0.8);
   crescentGeo.rotateX(Math.PI / 2);
   const crescentMat = new THREE.MeshStandardMaterial({
-    color: 0xddc8aa,
-    roughness: 0.78,
+    map: sandTex.map,
+    bumpMap: sandTex.bumpMap,
+    bumpScale: 0.035,
+    roughness: 0.7,
   });
   const crescentMesh = new THREE.Mesh(crescentGeo, crescentMat);
-  crescentMesh.position.set(4.0, 0.15, -16.0);
+  crescentMesh.position.set(4.5, 0.2, -18.0);
   scene3Group.add(crescentMesh);
 
+  // Volcanic Mountain Headlands on left
+  const headland = new THREE.Mesh(new THREE.ConeGeometry(38, 28, 8), cliffMat);
+  headland.position.set(-28.0, 12.0, -32.0);
+  scene3Group.add(headland);
+
+  // Modern Cliffside Infinity Pavilion
+  const pavilion = new THREE.Group();
+  pavilion.position.set(-8.0, 6.5, -20.0);
+  const pavSlab = new THREE.Mesh(new THREE.BoxGeometry(11.0, 0.45, 8.5), teakMat);
+  pavilion.add(pavSlab);
+  const pavRoof = new THREE.Mesh(new THREE.BoxGeometry(11.4, 0.35, 8.8), teakMat);
+  pavRoof.position.y = 3.2;
+  pavilion.add(pavRoof);
+  const pavRoom = new THREE.Mesh(new THREE.BoxGeometry(7.0, 2.8, 5.5), interiorGlowMat);
+  pavRoom.position.set(-1.0, 1.6, 0);
+  pavilion.add(pavRoom);
+  scene3Group.add(pavilion);
+
   // Ridge Coconut Palms
-  for (let p = 0; p < 10; p++) {
-    const ang = -0.4 + (p / 9) * 0.8;
+  for (let p = 0; p < 14; p++) {
+    const ang = -0.4 + (p / 13) * 0.8;
     const palm = createPalmTree(6.8 + (p % 3) * 0.8, 0.7, ang, false);
-    palm.position.set(-8.0 + p * 2.8, 1.8, -10.0 - (p % 2) * 2.2);
+    palm.position.set(-10.0 + p * 2.8, 1.8, -10.0 - (p % 2) * 2.2);
     scene3Group.add(palm);
   }
 
-  // Chapter Sky Atmospheric Colors
+  // ============================================================================
+  // CHAPTER ATMOSPHERIC COLOR CONFIGURATIONS
+  // ============================================================================
   const chapterAtmospheres = [
-    new THREE.Color(0xf5a260), // Sunset Atoll
-    new THREE.Color(0xe6a172), // Cliffside Villas
-    new THREE.Color(0x244837), // Jungle Waterfall
-    new THREE.Color(0x3da8b8), // Crescent Bay
+    { top: new THREE.Color(0x1a3a5c), bottom: new THREE.Color(0xf69c5e), sun: new THREE.Color(0xfff2d4) }, // Sunset Atoll
+    { top: new THREE.Color(0x284a6c), bottom: new THREE.Color(0xe6a172), sun: new THREE.Color(0xffecc8) }, // Cliffside Villas
+    { top: new THREE.Color(0x163426), bottom: new THREE.Color(0x2d684c), sun: new THREE.Color(0xdffff0) }, // Jungle Waterfall
+    { top: new THREE.Color(0x2478a0), bottom: new THREE.Color(0x56c4d4), sun: new THREE.Color(0xfffedc) }, // Crescent Bay
   ];
 
   function updateChapterVisibility(sceneId: number) {
@@ -619,12 +698,15 @@ export function createRaymarchEngine(): RaymarchEngineHandles {
     baseScene2Group.visible = sceneId === 2;
     baseScene3Group.visible = sceneId === 3;
 
-    scene.background = chapterAtmospheres[sceneId] || chapterAtmospheres[0];
+    const atm = chapterAtmospheres[sceneId] || chapterAtmospheres[0];
+    skyMat.uniforms.uTopColor.value.copy(atm.top);
+    skyMat.uniforms.uBottomColor.value.copy(atm.bottom);
+    skyMat.uniforms.uSunColor.value.copy(atm.sun);
   }
   updateChapterVisibility(0);
 
   // ============================================================================
-  // RENDER LOOP & HANDLERS
+  // ENGINE HANDLES & RENDER LOOP
   // ============================================================================
   return {
     render: (renderer, camera, targetPos, options) => {
@@ -652,18 +734,19 @@ export function createRaymarchEngine(): RaymarchEngineHandles {
 
       for (let i = 0; i < mistSprites.length; i++) {
         const item = mistSprites[i];
-        const yOffset = (elapsed * item.speed + i * 0.4) % 7.0;
+        const yOffset = (elapsed * item.speed + i * 0.4) % 8.0;
         item.mesh.position.y = item.basePos.y + yOffset;
-        item.mesh.material.opacity = Math.sin((yOffset / 7.0) * Math.PI) * 0.45 * mistDensity;
+        item.mesh.material.opacity = Math.sin((yOffset / 8.0) * Math.PI) * 0.45 * mistDensity;
         item.mesh.material.rotation += item.rotSpeed * 0.02;
       }
 
-      godRayMesh.material.opacity = (0.28 + Math.sin(elapsed * 1.2) * 0.08) * mistDensity;
+      godRayMesh.material.opacity = (0.3 + Math.sin(elapsed * 1.2) * 0.08) * mistDensity;
 
       // Sun position & intensity
       const sunElev = 18.0 + sunElevationScale * 22.0;
       sunLight.position.set(-30, sunElev, -60);
       sunLight.intensity = 2.8 + sunElevationScale * 1.4;
+      skyMat.uniforms.uSunPos.value.copy(sunLight.position).normalize();
 
       const w = window.innerWidth;
       const h = window.innerHeight;
