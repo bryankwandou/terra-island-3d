@@ -67,7 +67,7 @@ export function createSandTexture(): TexturePair {
   return { map, bumpMap };
 }
 
-// 2. Basalt & Limestone Cliff Rock Texture (diffuse + bump)
+// 2. Coastal Limestone & Basalt Cliff Rock Texture (diffuse + bump)
 export function createBasaltRockTexture(): TexturePair {
   const size = 512;
   const canvas = document.createElement("canvas");
@@ -80,37 +80,38 @@ export function createBasaltRockTexture(): TexturePair {
   bumpCanvas.height = size;
   const bCtx = bumpCanvas.getContext("2d")!;
 
-  ctx.fillStyle = "#2b2926";
+  // Warm natural limestone base
+  ctx.fillStyle = "#8a7e72";
   ctx.fillRect(0, 0, size, size);
   bCtx.fillStyle = "#808080";
   bCtx.fillRect(0, 0, size, size);
 
-  // Horizontal geological rock strata bands
-  for (let y = 0; y < size; y += 6 + Math.random() * 20) {
-    const h = 4 + Math.random() * 14;
-    const tone = 36 + Math.random() * 32;
-    const isMossy = Math.random() > 0.62;
+  // Horizontal geological rock strata bands with rich natural variation
+  for (let y = 0; y < size; y += 4 + Math.random() * 16) {
+    const h = 3 + Math.random() * 14;
+    const tone = 115 + Math.random() * 65;
+    const isMossy = Math.random() > 0.68;
     ctx.fillStyle = isMossy
-      ? `rgb(${Math.floor(tone * 0.72)}, ${Math.floor(tone * 1.2)}, ${Math.floor(tone * 0.68)})`
+      ? `rgb(${Math.floor(tone * 0.82)}, ${Math.floor(tone * 1.15)}, ${Math.floor(tone * 0.72)})`
       : `rgb(${Math.floor(tone)}, ${Math.floor(tone * 0.94)}, ${Math.floor(tone * 0.86)})`;
     ctx.fillRect(0, y, size, h);
 
-    const bVal = Math.floor(tone * 3);
+    const bVal = Math.floor(tone * 1.3);
     bCtx.fillStyle = `rgb(${bVal}, ${bVal}, ${bVal})`;
     bCtx.fillRect(0, y, size, h);
   }
 
-  // Crag noise
+  // Crag and mineral fracture noise
   const imgData = ctx.getImageData(0, 0, size, size);
   const bData = bCtx.getImageData(0, 0, size, size);
   const d = imgData.data;
   const bd = bData.data;
   for (let i = 0; i < d.length; i += 4) {
-    const n = (Math.random() - 0.5) * 38;
+    const n = (Math.random() - 0.5) * 32;
     d[i] = Math.min(255, Math.max(0, d[i] + n));
-    d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + n));
-    d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + n));
-    bd[i] = Math.min(255, Math.max(0, bd[i] + n * 2.2));
+    d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + n * 0.95));
+    d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + n * 0.88));
+    bd[i] = Math.min(255, Math.max(0, bd[i] + n * 2.0));
     bd[i + 1] = bd[i];
     bd[i + 2] = bd[i];
   }
@@ -120,14 +121,44 @@ export function createBasaltRockTexture(): TexturePair {
   const map = new THREE.CanvasTexture(canvas);
   map.wrapS = THREE.RepeatWrapping;
   map.wrapT = THREE.RepeatWrapping;
-  map.repeat.set(6, 6);
+  map.repeat.set(4, 4);
 
   const bumpMap = new THREE.CanvasTexture(bumpCanvas);
   bumpMap.wrapS = THREE.RepeatWrapping;
   bumpMap.wrapT = THREE.RepeatWrapping;
-  bumpMap.repeat.set(6, 6);
+  bumpMap.repeat.set(4, 4);
 
   return { map, bumpMap };
+}
+
+// 2b. Tropical Rainforest Canopy & Leaf Texture
+export function createJungleLeafTexture(): { map: THREE.CanvasTexture } {
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+
+  ctx.fillStyle = "#2c6c28";
+  ctx.fillRect(0, 0, size, size);
+
+  // Leaf veins & cellular chloroplast noise
+  for (let i = 0; i < 2400; i++) {
+    const x = Math.random() * size;
+    const y = Math.random() * size;
+    const r = 2 + Math.random() * 8;
+    const gVal = 95 + Math.floor(Math.random() * 70);
+    ctx.fillStyle = `rgb(${Math.floor(gVal * 0.42)}, ${gVal}, ${Math.floor(gVal * 0.32)})`;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const map = new THREE.CanvasTexture(canvas);
+  map.wrapS = THREE.RepeatWrapping;
+  map.wrapT = THREE.RepeatWrapping;
+  map.repeat.set(2, 2);
+  return { map };
 }
 
 // 3. Architectural Teak Wood Texture (diffuse + bump)
@@ -293,3 +324,4 @@ export function createGodRayTexture(): THREE.CanvasTexture {
   ctx.fillRect(0, 0, 256, 512);
   return new THREE.CanvasTexture(canvas);
 }
+

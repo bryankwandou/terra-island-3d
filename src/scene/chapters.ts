@@ -15,11 +15,11 @@ export interface ChapterSpec {
 export const CHAPTERS: ChapterSpec[] = [
   {
     id: 0,
-    kicker: "01 / SUNSET ATOLL · 00:00–00:05",
+    kicker: "01 / CORAL ATOLL · Outer Lagoon Sanctuary",
     label: "Sunset Atoll",
     titleLines: ["Golden light over", "the coral lagoon."],
     subtitle:
-      "Subsurface coral reef caustics, anisotropic solar glint, and 22 backlit pinnate coconut palms.",
+      "Subsurface coral reef caustics, anisotropic solar glint, and 28 backlit pinnate coconut palms.",
     startCamPos: [-2.4, 1.85, 22.0],
     endCamPos: [0.4, 1.65, 14.5],
     startLookAt: [1.5, 2.0, -7.5],
@@ -29,35 +29,35 @@ export const CHAPTERS: ChapterSpec[] = [
   },
   {
     id: 1,
-    kicker: "02 / CLIFFSIDE VILLAS · 00:05–00:10",
+    kicker: "02 / CLIFFSIDE VILLAS · Modern Cantilevered Teak",
     label: "Cliffside Villas",
     titleLines: ["Cantilevered teak", "above wet sand."],
     subtitle:
       "Mirror-wet shoreline swash reflections, weathered coastal basalt cliffs, and warm 2700K architectural interiors.",
-    startCamPos: [3.2, 2.1, 21.5],
-    endCamPos: [2.5, 1.95, 10.5],
-    startLookAt: [-4.2, 3.6, -12.0],
-    endLookAt: [-4.8, 3.8, -16.0],
-    fov: 45,
-    durationSec: 5.0,
-  },
-  {
-    id: 2,
-    kicker: "03 / JUNGLE WATERFALL · 00:10–00:15",
-    label: "Jungle Waterfall",
-    titleLines: ["Roaring cataract", "in emerald mist."],
-    subtitle:
-      "Striated limestone canyon walls, multi-chute fluid simulation, rising spray clouds, and diagonal god-ray shafts.",
-    startCamPos: [0.0, 14.5, 26.0],
-    endCamPos: [0.0, 16.8, 8.5],
-    startLookAt: [0.0, 15.8, -24.0],
-    endLookAt: [0.0, 18.2, -24.0],
+    startCamPos: [7.2, 2.8, 22.0],
+    endCamPos: [5.2, 2.4, 11.0],
+    startLookAt: [-4.2, 4.2, -6.0],
+    endLookAt: [-5.0, 4.5, -10.0],
     fov: 46,
     durationSec: 5.0,
   },
   {
+    id: 2,
+    kicker: "03 / JUNGLE WATERFALL · Emerald Canyon Cataract",
+    label: "Jungle Waterfall",
+    titleLines: ["Roaring cataract", "in emerald mist."],
+    subtitle:
+      "Striated limestone canyon walls, multi-chute fluid simulation, rising spray clouds, and diagonal god-ray shafts.",
+    startCamPos: [0.0, 11.8, 22.0],
+    endCamPos: [0.0, 10.5, 10.0],
+    startLookAt: [0.0, 13.5, -30.0],
+    endLookAt: [0.0, 14.8, -30.0],
+    fov: 48,
+    durationSec: 5.0,
+  },
+  {
     id: 3,
-    kicker: "04 / CRESCENT BAY · 00:15–00:20",
+    kicker: "04 / CRESCENT BAY · Volcanic Headlands & Reef",
     label: "Crescent Bay",
     titleLines: ["Where the valley", "meets the reef."],
     subtitle:
@@ -76,4 +76,3 @@ export const OVERVIEW_CAMERA = {
   lookAt: [0.0, 6.0, -10.0] as [number, number, number],
   fov: 52,
 };
-

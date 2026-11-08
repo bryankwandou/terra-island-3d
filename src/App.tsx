@@ -11,6 +11,7 @@ import {
   ArrowUpRight,
   X,
   Film,
+  Grid,
 } from "lucide-react";
 import { CHAPTERS } from "./scene/chapters";
 import { TerraCanvas3D } from "./components/TerraCanvas3D";
@@ -28,6 +29,13 @@ export const App: React.FC = () => {
   });
   const [isPlaying, setIsPlaying] = useState(true);
   const [isOverview, setIsOverview] = useState(false);
+  const [isWireframe, setIsWireframe] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("wireframe") === "true" || params.get("wireframe") === "1" || window.location.hash === "#wireframe";
+    } catch (_) {}
+    return false;
+  });
   const [isMuted, setIsMuted] = useState(true);
   const [isControlsOpen, setIsControlsOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -124,6 +132,7 @@ export const App: React.FC = () => {
         sliderPosition={sliderPosition}
         onSliderChange={setSliderPosition}
         isOverview={isOverview}
+        isWireframe={isWireframe}
         sunElevation={sunElevation}
         waveStrength={waveStrength}
         mistDensity={mistDensity}
@@ -149,33 +158,40 @@ export const App: React.FC = () => {
         <div className="pointer-events-auto flex items-center p-1 rounded-full bg-[rgba(244,240,230,0.94)] border border-[rgba(30,38,41,0.14)] shadow-2xl backdrop-blur-xl">
           <button
             type="button"
-            onClick={() => changeViewMode("photorealistic")}
+            onClick={() => {
+              setIsWireframe(false);
+              changeViewMode("photorealistic");
+            }}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              viewMode === "photorealistic"
+              viewMode === "photorealistic" && !isWireframe
                 ? "bg-white text-[#1E2629] shadow-sm font-bold"
                 : "text-[#727670] hover:text-[#1E2629]"
             }`}
           >
-            <Sparkles size={13} className={viewMode === "photorealistic" ? "text-[#E59846]" : ""} />
-            <span>9th Iteration (Photorealistic 3D)</span>
+            <Sparkles size={13} className={viewMode === "photorealistic" && !isWireframe ? "text-[#E59846]" : ""} />
+            <span>Photorealistic PBR</span>
           </button>
 
           <button
             type="button"
-            onClick={() => changeViewMode("reel")}
+            onClick={() => setIsWireframe((w) => !w)}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              viewMode === "reel"
-                ? "bg-white text-[#1E2629] shadow-sm font-bold"
+              isWireframe
+                ? "bg-[#1E2629] text-[#2EC492] shadow-sm font-bold"
                 : "text-[#727670] hover:text-[#1E2629]"
             }`}
+            title="Inspect Live 3D Polygon Wireframe Mesh (Live GPU Render Proof)"
           >
-            <Film size={13} className={viewMode === "reel" ? "text-[#D4893B]" : ""} />
-            <span>Comparison Reel (9:16 Vertical 3D)</span>
+            <Grid size={13} className={isWireframe ? "text-[#2EC492]" : ""} />
+            <span>Wireframe Mesh</span>
           </button>
 
           <button
             type="button"
-            onClick={() => changeViewMode("split")}
+            onClick={() => {
+              setIsWireframe(false);
+              changeViewMode("split");
+            }}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
               viewMode === "split"
                 ? "bg-white text-[#1E2629] shadow-sm font-bold"
@@ -183,12 +199,31 @@ export const App: React.FC = () => {
             }`}
           >
             <Columns size={13} className={viewMode === "split" ? "text-[#2EC492]" : ""} />
-            <span>Interactive Split Wipe 3D</span>
+            <span>Split Wipe Slider</span>
           </button>
 
           <button
             type="button"
-            onClick={() => changeViewMode("baseline")}
+            onClick={() => {
+              setIsWireframe(false);
+              changeViewMode("reel");
+            }}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              viewMode === "reel"
+                ? "bg-white text-[#1E2629] shadow-sm font-bold"
+                : "text-[#727670] hover:text-[#1E2629]"
+            }`}
+          >
+            <Film size={13} className={viewMode === "reel" ? "text-[#D4893B]" : ""} />
+            <span>Dual Viewport (9:16)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsWireframe(false);
+              changeViewMode("baseline");
+            }}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
               viewMode === "baseline"
                 ? "bg-white text-[#1E2629] shadow-sm font-bold"
@@ -196,7 +231,7 @@ export const App: React.FC = () => {
             }`}
           >
             <Box size={13} className={viewMode === "baseline" ? "text-[#1A6B7C]" : ""} />
-            <span>1st Attempt (Low-Poly Baseline)</span>
+            <span>Low-Poly Baseline</span>
           </button>
         </div>
 

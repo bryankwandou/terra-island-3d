@@ -12,6 +12,7 @@ interface TerraCanvas3DProps {
   sliderPosition: number;
   onSliderChange?: (val: number) => void;
   isOverview: boolean;
+  isWireframe?: boolean;
   sunElevation: number;
   waveStrength: number;
   mistDensity: number;
@@ -27,6 +28,7 @@ export const TerraCanvas3D: React.FC<TerraCanvas3DProps> = ({
   sliderPosition,
   onSliderChange,
   isOverview,
+  isWireframe = false,
   sunElevation,
   waveStrength,
   mistDensity,
@@ -53,6 +55,7 @@ export const TerraCanvas3D: React.FC<TerraCanvas3DProps> = ({
     viewMode,
     sliderPosition,
     isOverview,
+    isWireframe,
     sunElevation,
     waveStrength,
     mistDensity,
@@ -67,6 +70,7 @@ export const TerraCanvas3D: React.FC<TerraCanvas3DProps> = ({
     viewMode,
     sliderPosition,
     isOverview,
+    isWireframe,
     sunElevation,
     waveStrength,
     mistDensity,
@@ -222,6 +226,7 @@ export const TerraCanvas3D: React.FC<TerraCanvas3DProps> = ({
         waterClarity: currentClarity,
         viewMode: currentViewMode,
         sliderPosition: currentSliderPos,
+        wireframe: stateRef.current.isWireframe,
       });
     };
     animate();
